@@ -13,7 +13,12 @@ import {
 import DataError from 'components/DataError'
 import { actions, selectors } from 'data'
 import { RootState } from 'data/rootReducer'
-import { RecurringBuyPeriods, RecurringBuyStepType, SBCheckoutFormValuesType } from 'data/types'
+import {
+  RecurringBuyOrigins,
+  RecurringBuyPeriods,
+  RecurringBuyStepType,
+  SBCheckoutFormValuesType
+} from 'data/types'
 
 import Loading from '../template.loading'
 import { getData } from './selectors'
@@ -39,7 +44,7 @@ class OrderSummary extends PureComponent<Props> {
         step: '3DS_HANDLER'
       })
     }
-    this.props.interestActions.fetchShowInterestCardAfterTransaction()
+    this.props.interestActions.fetchShowInterestCardAfterTransaction({})
   }
 
   handleRefresh = () => {
@@ -50,13 +55,15 @@ class OrderSummary extends PureComponent<Props> {
     // this recurring buy flow is for first time buyers only. They'll have 1 tx at this point in the flow and
     // they didn't already create a recurring buy buy so we send them to RB walkthrough flow
     if (
-      this.props.anyAvailablePeriods &&
+      this.props.hasAvailablePeriods &&
       this.props.isRecurringBuy &&
       this.props.orders.length <= 1 &&
       this.props.formValues?.period === RecurringBuyPeriods.ONE_TIME &&
       this.props.hasQuote
     ) {
-      this.props.recurringBuyActions.showModal({ origin: 'SimpleBuyOrderSummary' })
+      this.props.recurringBuyActions.showModal({
+        origin: RecurringBuyOrigins.SIMPLE_BUY_ORDER_SUMMARY
+      })
       this.props.recurringBuyActions.setStep({ step: RecurringBuyStepType.GET_STARTED })
     } else {
       this.props.handleClose()
@@ -83,11 +90,11 @@ class OrderSummary extends PureComponent<Props> {
 }
 
 const mapStateToProps = (state: RootState, ownProps: OwnProps): LinkStatePropsType => ({
-  anyAvailablePeriods: selectors.components.recurringBuy.anyAvailablePeriods(ownProps.method)(
-    state
-  ),
   data: getData(state),
   formValues: selectors.form.getFormValues('simpleBuyCheckout')(state) as SBCheckoutFormValuesType,
+  hasAvailablePeriods: selectors.components.recurringBuy.hasAvailablePeriods(ownProps.method)(
+    state
+  ),
   hasQuote: selectors.components.simpleBuy.hasQuote(state),
   isGoldVerified: equals(selectors.modules.profile.getCurrentTier(state), 2),
   isRecurringBuy: selectors.core.walletOptions
@@ -113,9 +120,9 @@ export type OwnProps = {
 export type SuccessStateType = ExtractSuccess<ReturnType<typeof getData>>
 
 type LinkStatePropsType = {
-  anyAvailablePeriods: boolean
   data: RemoteDataType<string, SuccessStateType>
   formValues: SBCheckoutFormValuesType
+  hasAvailablePeriods: boolean
   hasQuote: boolean
   isGoldVerified: boolean
   isRecurringBuy: boolean

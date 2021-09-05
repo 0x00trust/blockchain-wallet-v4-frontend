@@ -6,6 +6,7 @@ import { call, delay, fork, put, race, select, take } from 'redux-saga/effects'
 import { Remote, Types } from 'blockchain-wallet-v4/src'
 import { DEFAULT_INVITATIONS } from 'blockchain-wallet-v4/src/model'
 import { actions, actionTypes, model, selectors } from 'data'
+import { ModalName } from 'data/modals/types'
 import profileSagas from 'data/modules/profile/sagas'
 import * as C from 'services/alerts'
 import { isGuid } from 'services/forms'
@@ -83,14 +84,14 @@ export default ({ api, coreSagas, networks }) => {
   const saveGoals = function* (firstLogin) {
     // only for non first login users we save goal here for first login users we do that over verify email page
     if (!firstLogin) {
-      yield put(actions.goals.saveGoal('welcomeModal', {}))
+      yield put(actions.goals.saveGoal({ data: {}, name: 'welcomeModal' }))
     }
-    yield put(actions.goals.saveGoal('swapUpgrade', {}))
-    yield put(actions.goals.saveGoal('swapGetStarted', {}))
-    yield put(actions.goals.saveGoal('kycDocResubmit', {}))
-    yield put(actions.goals.saveGoal('transferEth', {}))
-    yield put(actions.goals.saveGoal('syncPit', {}))
-    yield put(actions.goals.saveGoal('interestPromo', {}))
+    yield put(actions.goals.saveGoal({ data: {}, name: 'swapUpgrade' }))
+    yield put(actions.goals.saveGoal({ data: {}, name: 'swapGetStarted' }))
+    yield put(actions.goals.saveGoal({ data: {}, name: 'kycDocResubmit' }))
+    yield put(actions.goals.saveGoal({ data: {}, name: 'transferEth' }))
+    yield put(actions.goals.saveGoal({ data: {}, name: 'syncPit' }))
+    yield put(actions.goals.saveGoal({ data: {}, name: 'interestPromo' }))
     // when airdrops are running
     // yield put(actions.goals.saveGoal('upgradeForAirdrop'))
     // yield put(actions.goals.saveGoal('airdropClaim'))
@@ -340,6 +341,34 @@ export default ({ api, coreSagas, networks }) => {
       // Redirect to error page instead of notification
       yield put(actions.alerts.displayError(C.WALLET_LOADING_ERROR))
     }
+  }
+
+  const pingManifestFile = function* () {
+    try {
+      const domains = (yield select(selectors.core.walletOptions.getDomains)).getOrElse({
+        comWalletApp: 'https://login.blockchain.com'
+      })
+      const response = yield fetch(domains.comWalletApp)
+      const raw = yield response.text()
+      const nextManifest = raw.match(/manifest\.\d*.js/)[0]
+
+      const currentManifest = yield select(S.getManifest)
+
+      if (currentManifest && nextManifest !== currentManifest) {
+        yield put(actions.modals.showModal(ModalName.NEW_VERSION_AVAILABLE, { origin: 'Unknown' }))
+      }
+
+      if (!currentManifest) {
+        yield put(A.setManifestFile(nextManifest))
+      }
+    } catch (e) {
+      // wallet failed to fetch
+      // happens rarely but could happen
+      // ignore error
+    }
+
+    yield delay(10_000)
+    yield put(A.pingManifestFile())
   }
 
   const pollingSession = function* (session, n = 50) {
@@ -706,6 +735,7 @@ export default ({ api, coreSagas, networks }) => {
         yield call(parseMagicLink, params)
       }
       yield put(A.initializeLoginSuccess())
+      yield put(A.pingManifestFile())
     } catch (e) {
       yield put(A.initializeLoginFailure())
       yield put(actions.logs.logErrorMessage(logLocation, 'initializeLogin', e))
@@ -800,6 +830,7 @@ export default ({ api, coreSagas, networks }) => {
     logout,
     logoutClearReduxStore,
     mobileLogin,
+    pingManifestFile,
     pollingSession,
     register,
     resendSmsLoginCode,
