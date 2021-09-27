@@ -18,12 +18,11 @@
       },
       "featureFlags": {
         "eddInterestFileUpload": true,
-        "legacyMagicEmailLink": true,
+        "legacyMagicEmailLink": false,
         "legacyMobilePairing": false,
         "legacyWalletRecovery": false,
         "recurringBuys": true,
-        "signupCountry": true,
-        "ssoDummy": false
+        "signupCountry": true
       }
     }
   },

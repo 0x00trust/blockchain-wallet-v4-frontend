@@ -15,7 +15,6 @@ import { selectors } from 'data'
 import { UserDataType } from 'data/types'
 import PublicLayout from 'layouts/Public'
 import WalletLayout from 'layouts/Wallet'
-import AnalyticsTracker from 'providers/AnalyticsTracker'
 import { MediaContextProvider } from 'providers/MatchMediaProvider'
 import ThemeProvider from 'providers/ThemeProvider'
 import TranslationsProvider from 'providers/TranslationsProvider'
@@ -105,8 +104,8 @@ const App = ({
                     <WalletLayout path='/airdrops' component={Airdrops} />
                     <WalletLayout path='/exchange' component={TheExchange} />
                     <WalletLayout path='/home' component={Home} />
-                    <WalletLayout path='/interest' component={Interest} exact />
-                    <WalletLayout path='/interest/history' component={InterestHistory} />
+                    <WalletLayout path='/rewards' component={Interest} exact />
+                    <WalletLayout path='/rewards/history' component={InterestHistory} />
                     <WalletLayout path='/lockbox' component={Lockbox} />
                     <WalletLayout path='/security-center' component={SecurityCenter} />
                     <WalletLayout path='/settings/addresses' component={Addresses} />
@@ -133,7 +132,6 @@ const App = ({
               </ConnectedRouter>
               {isAuthenticated && <SupportChat />}
               <SiftScience userId={userData.id} />
-              <AnalyticsTracker />
             </MediaContextProvider>
           </PersistGate>
         </TranslationsProvider>

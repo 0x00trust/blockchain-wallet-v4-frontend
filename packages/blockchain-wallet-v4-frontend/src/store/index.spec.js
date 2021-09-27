@@ -1,8 +1,8 @@
 import * as Redux from 'redux'
 import { persistStore } from 'redux-persist'
 
-import { ApiSocket, createWalletApi, Socket } from 'blockchain-wallet-v4/src/network'
-import * as coreMiddleware from 'blockchain-wallet-v4/src/redux/middleware'
+import { ApiSocket, createWalletApi, Socket } from '@core/network'
+import * as coreMiddleware from '@core/redux/middleware'
 
 import * as Middleware from '../middleware'
 import configuredStore from './index'
@@ -191,7 +191,6 @@ describe('App Store Config', () => {
   let kvStoreSpy
   let walletSyncSpy
   let autoDisconnectSpy
-  let matomoMiddlewareSpy
   let analyticsMiddlewareSpy
   let coinsSocketSpy
 
@@ -206,7 +205,6 @@ describe('App Store Config', () => {
     kvStoreSpy = jest.spyOn(coreMiddleware, 'kvStore')
     walletSyncSpy = jest.spyOn(coreMiddleware, 'walletSync')
     coinsSocketSpy = jest.spyOn(Middleware, 'webSocketCoins')
-    matomoMiddlewareSpy = jest.spyOn(Middleware, 'matomoMiddleware')
     analyticsMiddlewareSpy = jest.spyOn(Middleware, 'analyticsMiddleware')
     autoDisconnectSpy = jest.spyOn(Middleware, 'autoDisconnection')
   })
@@ -259,7 +257,6 @@ describe('App Store Config', () => {
       isAuthenticated: expect.any(Function),
       walletPath: 'wallet.payload'
     })
-    expect(matomoMiddlewareSpy).toHaveBeenCalledTimes(1)
     expect(analyticsMiddlewareSpy).toHaveBeenCalledTimes(1)
     expect(autoDisconnectSpy).toHaveBeenCalledTimes(1)
     // middleware compose

@@ -10,20 +10,19 @@ import getStoredStateMigrateV4 from 'redux-persist/lib/integration/getStoredStat
 import storage from 'redux-persist/lib/storage'
 import createSagaMiddleware from 'redux-saga'
 
-import { coreMiddleware } from 'blockchain-wallet-v4/src'
+import { coreMiddleware } from '@core'
 import {
   ApiSocket,
   createWalletApi,
   HorizonStreamingService,
   Socket
-} from 'blockchain-wallet-v4/src/network/index.ts'
-import { serializer } from 'blockchain-wallet-v4/src/types'
+} from '@core/network/index.ts'
+import { serializer } from '@core/types'
 import { actions, rootReducer, rootSaga, selectors } from 'data'
 
 import {
   analyticsMiddleware,
   autoDisconnection,
-  matomoMiddleware,
   streamingXlm,
   webSocketCoins,
   webSocketRates
@@ -132,7 +131,6 @@ const configuredStore = async function () {
       webSocketRates(ratesSocket),
       webSocketCoins(coinsSocket),
       coreMiddleware.walletSync({ api, isAuthenticated, walletPath }),
-      matomoMiddleware(),
       analyticsMiddleware(),
       autoDisconnection()
     ]),
