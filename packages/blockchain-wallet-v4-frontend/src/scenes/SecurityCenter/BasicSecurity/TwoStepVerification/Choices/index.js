@@ -13,8 +13,7 @@ const Choice = styled.div`
   border-radius: 6px;
   padding: 15px;
   cursor: pointer;
-  opacity: ${props =>
-    props.selected && props.editing ? 1 : !props.editing ? 1 : 0.3};
+  opacity: ${(props) => (props.selected && props.editing ? 1 : !props.editing ? 1 : 0.3)};
   div * {
     cursor: pointer;
   }
@@ -49,6 +48,7 @@ const YubikeyWrapper = styled.div`
     display: flex;
     align-items: center;
     margin-right: 3px;
+    justify-content: space-between;
   `};
 `
 const SecurityIcon = styled(Icon)`
@@ -68,9 +68,7 @@ function Choices(props) {
         editing={editing}
         selected={authType === 4}
         onClick={
-          editing && authType > 0
-            ? () => props.pulseText()
-            : () => props.chooseMethod('google')
+          editing && authType > 0 ? () => props.pulseText() : () => props.chooseMethod('google')
         }
       >
         <SecurityIcon name='lock' size='18px' weight={500} />
@@ -93,9 +91,7 @@ function Choices(props) {
         editing={editing}
         selected={authType === 1 || authType === 2}
         onClick={
-          editing && authType > 0
-            ? () => props.pulseText()
-            : () => props.chooseMethod('yubikey')
+          editing && authType > 0 ? () => props.pulseText() : () => props.chooseMethod('yubikey')
         }
       >
         <YubikeyWrapper>
@@ -120,9 +116,7 @@ function Choices(props) {
         editing={editing}
         selected={authType === 5}
         onClick={
-          editing && authType > 0
-            ? () => props.pulseText()
-            : () => props.chooseMethod('sms')
+          editing && authType > 0 ? () => props.pulseText() : () => props.chooseMethod('sms')
         }
       >
         <SecurityIcon name='mobile' size='18px' weight={500} />

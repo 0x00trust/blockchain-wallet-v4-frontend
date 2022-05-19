@@ -3,6 +3,7 @@ import { connect, ConnectedProps } from 'react-redux'
 import { bindActionCreators, compose, Dispatch } from 'redux'
 import { reduxForm } from 'redux-form'
 
+import { CrossBorderLimits } from '@core/types'
 import Flyout, { duration, FlyoutChild } from 'components/Flyout'
 import { actions, selectors } from 'data'
 import { SendCryptoStepType } from 'data/components/sendCrypto/types'
@@ -30,7 +31,7 @@ class SendCrypto extends PureComponent<Props, State> {
     /* eslint-disable */
     this.setState({ show: true })
     /* eslint-enable */
-    this.props.sendCryptoActions.fetchWithdrawalFees()
+    this.props.sendCryptoActions.fetchWithdrawalFees({})
     this.props.sendCryptoActions.fetchWithdrawalLocks()
   }
 
@@ -50,7 +51,7 @@ class SendCrypto extends PureComponent<Props, State> {
       <Flyout {...this.props} isOpen={this.state.show} onClose={this.handleClose}>
         {this.props.step === SendCryptoStepType.COIN_SELECTION && (
           <FlyoutChild>
-            <CoinSelect {...this.props} />
+            <CoinSelect {...this.props} close={this.handleClose} />
           </FlyoutChild>
         )}
         {this.props.step === SendCryptoStepType.ENTER_TO && (
@@ -83,22 +84,36 @@ const mapStateToProps = (state: RootState) => ({
   formValues: selectors.form.getFormValues(SEND_FORM)(state) as SendFormType,
   initialValues: {
     coin: state.components.sendCrypto.initialCoin,
+    fee: 'LOW',
     fix: 'CRYPTO'
   },
+  isValidAddress: selectors.components.sendCrypto.getIsValidAddress(state),
+  sendLimits: selectors.components.sendCrypto
+    .getSendLimits(state)
+    .getOrElse({} as CrossBorderLimits),
   sendableCoins: getData(),
   step: selectors.components.sendCrypto.getStep(state),
   walletCurrency: selectors.core.settings.getCurrency(state).getOrElse('USD')
 })
 
 const mapDispatchToProps = (dispatch: Dispatch) => ({
+  buySellActions: bindActionCreators(actions.components.buySell, dispatch),
   formActions: bindActionCreators(actions.form, dispatch),
   routerActions: bindActionCreators(actions.router, dispatch),
-  sendCryptoActions: bindActionCreators(actions.components.sendCrypto, dispatch)
+  sendCryptoActions: bindActionCreators(actions.components.sendCrypto, dispatch),
+  verifyIdentity: () =>
+    dispatch(
+      actions.components.identityVerification.verifyIdentity({
+        needMoreInfo: false,
+        origin: 'Send',
+        tier: 2
+      })
+    )
 })
 
 const connector = connect(mapStateToProps, mapDispatchToProps)
 
-const enhance = compose<any>(
+const enhance = compose<React.ComponentType>(
   ModalEnhancer(ModalName.SEND_CRYPTO_MODAL, { transition: duration }),
   connector,
   reduxForm({

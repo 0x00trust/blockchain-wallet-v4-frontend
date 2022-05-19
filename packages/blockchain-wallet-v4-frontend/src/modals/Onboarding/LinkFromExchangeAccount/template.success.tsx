@@ -3,7 +3,7 @@ import { FormattedMessage } from 'react-intl'
 import styled from 'styled-components'
 
 import { Button, Icon, Image, Link, Text } from 'blockchain-info-components'
-import { DisplayPaymentIcon } from 'components/SimpleBuy'
+import { DisplayPaymentIcon } from 'components/BuySell'
 
 import { Props } from '.'
 import { ButtonWrapper, ItemIcon, ListWrapper, MainWrapper, TitleWrapper } from './styles'
@@ -68,7 +68,9 @@ const ListText = styled(Text)`
   }
 `
 
-const Success: React.FC<Props & { close: () => void; data: any }> = (props) => {
+const Success: React.FC<
+  Props & { close: () => void; data: { email: string; walletGuid: string } }
+> = (props) => {
   const { close, userTiers } = props
 
   // @ts-ignore

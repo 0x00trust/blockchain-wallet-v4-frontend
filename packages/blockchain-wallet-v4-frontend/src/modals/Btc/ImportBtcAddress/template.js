@@ -13,13 +13,11 @@ import {
   TooltipHost,
   TooltipIcon
 } from 'blockchain-info-components'
-import {
-  Form,
-  FormGroup,
-  FormItem,
-  SelectBoxBtcAddresses,
-  TextBox
-} from 'components/Form'
+import Form from 'components/Form/Form'
+import FormGroup from 'components/Form/FormGroup'
+import FormItem from 'components/Form/FormItem'
+import SelectBoxBtcAddresses from 'components/Form/SelectBoxBtcAddresses'
+import TextBox from 'components/Form/TextBox'
 import QRCodeCapture from 'components/QRCode/Capture'
 import { required, validBtcPrivateKey } from 'services/forms'
 import { removeWhitespace } from 'services/forms/normalizers'
@@ -27,9 +25,9 @@ import { spacing } from 'services/styles'
 
 const Wrapper = styled.div`
   font-weight: 400;
-  color: ${props => props.theme.grey700};
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  color: ${(props) => props.theme.grey700};
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+    Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 `
 const Row = styled.div`
   display: flex;
@@ -66,33 +64,23 @@ const ImportHeader = styled(ModalHeader)`
 
   > div:first-child * {
     font-weight: 500;
-    color: ${props => props.theme.grey800};
+    color: ${(props) => props.theme.grey800};
   }
 `
 const ImportFooter = styled(ModalFooter)`
   border-top: 0;
 `
 
-const ImportBtcAddress = ({
-  handleSubmit,
-  invalid,
-  onClose,
-  position,
-  priv,
-  submitting
-}) => (
+const ImportBtcAddress = ({ handleSubmit, invalid, onClose, position, priv, submitting }) => (
   <Modal size='large' position={position}>
     <Form onSubmit={handleSubmit}>
       <Wrapper>
         <ImportHeader onClose={onClose}>
-          <FormattedMessage
-            id='modals.importkey.import'
-            defaultMessage='Import Private Key'
-          />
+          <FormattedMessage id='modals.importkey.import' defaultMessage='Import Private Key' />
         </ImportHeader>
         <ModalBody>
           <FormGroup>
-            <ImportFormItem width={'100%'}>
+            <ImportFormItem width='100%'>
               <Label htmlFor='addrOrPriv'>
                 <LabelText color='grey600' size='14px' weight={500}>
                   <FormattedMessage
@@ -100,11 +88,7 @@ const ImportBtcAddress = ({
                     defaultMessage='Enter your private key'
                   />
                 </LabelText>
-                <Tooltip
-                  id='import.privatekeys'
-                  data-place='right'
-                  style={{ marginTop: '3px' }}
-                >
+                <Tooltip id='import.privatekeys' data-place='right' style={{ marginTop: '3px' }}>
                   <TooltipIcon name='info' />
                 </Tooltip>
               </Label>
@@ -116,13 +100,10 @@ const ImportBtcAddress = ({
                   component={TextBox}
                   data-e2e='privateKeyInput'
                 />
-                <QRCodeCapture
-                  scanType='btcPrivOrAddress'
-                  border={['top', 'bottom', 'right']}
-                />
+                <QRCodeCapture scanType='btcPrivOrAddress' border={['top', 'bottom', 'right']} />
               </BorderRow>
             </ImportFormItem>
-            <ImportFormItem width={'100%'}>
+            <ImportFormItem width='100%'>
               <Label htmlFor='addrOrPriv'>
                 <LabelText color='grey600' size='14px' weight={500}>
                   <FormattedMessage
@@ -132,12 +113,7 @@ const ImportBtcAddress = ({
                 </LabelText>
               </Label>
               <Row>
-                <Field
-                  name='label'
-                  validate={[]}
-                  component={TextBox}
-                  data-e2e='labelInput'
-                />
+                <Field name='label' validate={[]} component={TextBox} data-e2e='labelInput' />
               </Row>
             </ImportFormItem>
             <ImportFormItem style={spacing('mt-10')}>
@@ -171,10 +147,7 @@ const ImportBtcAddress = ({
             disabled={submitting || invalid}
             data-e2e='importButton'
           >
-            <FormattedMessage
-              id='modals.importkey.import'
-              defaultMessage='Import Private Key'
-            />
+            <FormattedMessage id='modals.importkey.import' defaultMessage='Import Private Key' />
           </Button>
         </ImportFooter>
       </Wrapper>

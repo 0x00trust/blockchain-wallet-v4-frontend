@@ -51,7 +51,6 @@ export const getData = (
     exclude?: Array<string>
     excludeHDWallets?: boolean
     excludeImported?: boolean
-    excludeLockbox?: boolean
     forceCustodialFirst?: boolean
     includeAll?: boolean
     includeCustodial?: boolean
@@ -63,7 +62,6 @@ export const getData = (
     exclude = [],
     excludeHDWallets,
     excludeImported,
-    excludeLockbox,
     includeAll = true,
     includeCustodial,
     includeExchangeAddress,
@@ -93,7 +91,7 @@ export const getData = (
   }
   const buildInterestDisplay = (x: InterestAccountBalanceType['BTC']) => {
     return (
-      `Interest Account` +
+      `Rewards Account` +
       ` (${Exchange.displayCoinToCoin({
         coin: 'BTC',
         value: x ? x.balance : 0
@@ -122,7 +120,7 @@ export const getData = (
             label: buildInterestDisplay(x),
             value: {
               ...x,
-              label: 'Interest Account',
+              label: 'Rewards Account',
               type: ADDRESS_TYPES.INTEREST
             }
           }
@@ -149,8 +147,8 @@ export const getData = (
         .map(toDropdown)
         .map(toGroup('Wallet')),
       showCustodial || showCustodialWithAddress
-        ? selectors.components.simpleBuy
-            .getSBBalances(state)
+        ? selectors.components.buySell
+            .getBSBalances(state)
             .map((x) => ({
               ...x.BTC,
               address: accountAddress ? accountAddress.data : null
@@ -163,7 +161,7 @@ export const getData = (
             .getInterestAccountBalance(state)
             .map((x) => x.BTC)
             .map(toInterestDropdown)
-            .map(toGroup('Interest Account'))
+            .map(toGroup('Rewards Account'))
         : Remote.of([]),
       excludeImported
         ? Remote.of([])
@@ -182,16 +180,9 @@ export const getData = (
                 ),
                 x
               )
-            ),
-      excludeLockbox
-        ? Remote.of([])
-        : selectors.core.common.btc
-            .getLockboxBtcBalances(state)
-            .map(excluded)
-            .map(toDropdown)
-            .map(toGroup('Lockbox'))
-    ]).map(([b1, b2, b3, b4, b5]) => {
-      const orderArray = forceCustodialFirst ? [b3, b1, b2, b4, b5] : [b1, b2, b3, b4, b5]
+            )
+    ]).map(([b1, b2, b3, b4]) => {
+      const orderArray = forceCustodialFirst ? [b3, b1, b2, b4] : [b1, b2, b3, b4]
       // @ts-ignore
       const data = reduce(concat, [], orderArray) as array
 

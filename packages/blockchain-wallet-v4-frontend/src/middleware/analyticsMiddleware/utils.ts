@@ -1,9 +1,16 @@
-import crypto from 'crypto'
+import { BSPaymentTypes, PaymentValue } from '@core/types'
+import {
+  BrokerageModalOriginType,
+  BSShowModalOriginType,
+  RecurringBuyOrigins,
+  VerifyIdentityOriginType
+} from 'data/types'
 import type {
   BuySellClickedOrigin,
   InterestDepositClickedOrigin,
   LinkBankClickedOrigin,
   ManageTabSelectionClickedSelection,
+  SendReceiveClickedOrigin,
   SettingsHyperlinkClickedDestination,
   SettingsTabClickedDestination,
   SwapClickedOrigin,
@@ -11,17 +18,10 @@ import type {
 } from 'middleware/analyticsMiddleware/types'
 import { PaymentType } from 'middleware/analyticsMiddleware/types'
 
-import { PaymentValue, SBPaymentTypes } from '@core/types'
-import {
-  BrokerageModalOriginType,
-  SBShowModalOriginType,
-  VerifyIdentityOriginType
-} from 'data/types'
-
 // The origin dictionaries are only necessary until we remove the MATOMO tracker,
 // after that, we should refactor those origins to use the correct origins with enums
 
-const buySellClickedOriginDictionary = (rawOrigin: SBShowModalOriginType): BuySellClickedOrigin => {
+const buySellClickedOriginDictionary = (rawOrigin: BSShowModalOriginType): BuySellClickedOrigin => {
   switch (rawOrigin) {
     case 'InterestPage':
       return 'SAVINGS'
@@ -35,7 +35,7 @@ const buySellClickedOriginDictionary = (rawOrigin: SBShowModalOriginType): BuySe
       return 'LINK_BANK'
     case 'PriceChart':
       return 'PRICE_CHART'
-    case 'SimpleBuyLink':
+    case 'BuySellLink':
       return 'BUY_WIDGET'
     case 'CurrencyList':
       return 'CURRENCY_PAGE'
@@ -56,18 +56,18 @@ const buySellClickedOriginDictionary = (rawOrigin: SBShowModalOriginType): BuySe
 }
 
 const buyPaymentMethodSelectedPaymentTypeDictionary = (
-  rawPaymentType: SBPaymentTypes
+  rawPaymentType: BSPaymentTypes
 ): PaymentType => {
   switch (rawPaymentType) {
-    case SBPaymentTypes.USER_CARD:
+    case BSPaymentTypes.USER_CARD:
       return PaymentType.PAYMENT_CARD
-    case SBPaymentTypes.LINK_BANK:
+    case BSPaymentTypes.LINK_BANK:
       return PaymentType.BANK_ACCOUNT
-    case SBPaymentTypes.BANK_ACCOUNT:
+    case BSPaymentTypes.BANK_ACCOUNT:
       return PaymentType.BANK_ACCOUNT
-    case SBPaymentTypes.FUNDS:
+    case BSPaymentTypes.FUNDS:
       return PaymentType.FUNDS
-    case SBPaymentTypes.BANK_TRANSFER:
+    case BSPaymentTypes.BANK_TRANSFER:
       return PaymentType.BANK_TRANSFER
     default:
       return PaymentType.BANK_ACCOUNT
@@ -75,10 +75,6 @@ const buyPaymentMethodSelectedPaymentTypeDictionary = (
 }
 
 const getOriginalTimestamp = () => new Date().toISOString()
-
-const generateUniqueId = (id: string) => {
-  return crypto.createHash('sha256').update(id).digest().toString('base64')
-}
 
 const getNetworkFee = (paymentValue: PaymentValue | null) => {
   return paymentValue
@@ -134,6 +130,55 @@ const manageTabSelectionClickedSelectionDictionary = (
   }
 }
 
+const recurringBuyDetailsClickOrigin = (
+  rawOrigin: RecurringBuyOrigins
+): 'CURRENCY_PAGE' | 'TRANSACTION_LIST' => {
+  // Users can't currently click on RB details from anywhere accept the coin page
+  switch (rawOrigin) {
+    case RecurringBuyOrigins.COIN_PAGE:
+      return 'CURRENCY_PAGE'
+    default: {
+      throw new Error('Origin not found')
+    }
+  }
+}
+
+const recurringBuyCancelOrigin = (
+  rawOrigin: RecurringBuyOrigins
+): 'TRANSACTION_DETAILS' | 'RECURRING_BUY_DETAILS' => {
+  switch (rawOrigin) {
+    case RecurringBuyOrigins.BUY_CONFIRMATION:
+    case RecurringBuyOrigins.RECURRING_BUYS_FREQUENCY_SCREEN:
+      return 'TRANSACTION_DETAILS'
+    case RecurringBuyOrigins.COIN_PAGE:
+    case RecurringBuyOrigins.DASHBOARD_PROMO:
+    case RecurringBuyOrigins.DETAILS_SCREEN:
+    case RecurringBuyOrigins.RECURRING_BUYS_BANNER:
+      return 'RECURRING_BUY_DETAILS'
+    default: {
+      throw new Error('Origin not found')
+    }
+  }
+}
+
+const sendReceiveClickedOriginDictionary = (rawOrigin: string): SendReceiveClickedOrigin => {
+  switch (rawOrigin) {
+    case 'FeaturesTopNav':
+    case 'Send':
+      return 'NAVIGATION'
+    case 'SwapNoHoldings':
+      return 'NO_HOLDINGS'
+    case 'Prices':
+      return 'CURRENCY_PAGE'
+    case 'EmptyFeed':
+    case 'WalletBalanceDropdown':
+      return 'TRANSACTIONS_PAGE'
+    default: {
+      throw new Error('Origin not found')
+    }
+  }
+}
+
 const settingsHyperlinkClickedDestinationDictionary = (
   rawDestination: string
 ): SettingsHyperlinkClickedDestination => {
@@ -159,7 +204,7 @@ const settingsTabClickedDestinationDictionary = (
     case 'Preferences':
       return 'PREFERENCES'
     case 'TradingLimits':
-      return 'TRADING_LIMITS_MODAL'
+      return 'TRADING_LIMITS'
     case 'WalletAndAddresses':
       return 'WALLETS&ADDRESSES'
     default: {
@@ -177,6 +222,7 @@ const swapClickedOriginDictionary = (rawOrigin: string): SwapClickedOrigin => {
     case 'SettingsProfile':
       return 'SETTINGS'
     case 'FeaturesTopNav':
+    case 'Trade':
       return 'NAVIGATION'
     case 'Send':
       return 'SEND'
@@ -192,6 +238,7 @@ const upgradeVerificationClickedOriginDictionary = (
   rawOrigin: VerifyIdentityOriginType
 ): UpgradeVerificationClickedOrigin => {
   switch (rawOrigin) {
+    case 'CompleteProfile':
     case 'DashboardPromo':
       return 'DASHBOARD_PROMO'
     case 'Goals':
@@ -204,7 +251,7 @@ const upgradeVerificationClickedOriginDictionary = (
       return 'RESUBMISSION'
     case 'Settings':
       return 'SETTINGS'
-    case 'SimpleBuy':
+    case 'BuySell':
       return 'SIMPLEBUY'
     case 'Swap':
       return 'SWAP'
@@ -215,14 +262,18 @@ const upgradeVerificationClickedOriginDictionary = (
   }
 }
 
-const utmParser = (query: string): { [key: string]: string } => {
+// parses and combines utm codes from both the search and hash portions of the url
+// if a duplicate utm key name is found in both search and hash portions of url
+// the value of the specific utm will be taken from the hash
+const utmParser = () => {
   const regexp = /(?!&)utm_[^=]*=[^&]*/g
 
-  const matches = query.match(regexp)
+  const qsMatches = window.location.search.match(regexp) || []
+  const hashMatches = window.location.hash.match(regexp) || []
 
-  if (!matches) return {}
+  if (!qsMatches && !hashMatches) return {}
 
-  const values = matches.reduce((obj, param) => {
+  return [...qsMatches, ...hashMatches].reduce((obj, param) => {
     const keyValue = param.split('=')
 
     let key = keyValue[0].slice(keyValue[0].indexOf('_') + 1)
@@ -235,19 +286,19 @@ const utmParser = (query: string): { [key: string]: string } => {
 
     return { ...obj, [key]: value }
   }, {})
-
-  return values
 }
 
 export {
   buyPaymentMethodSelectedPaymentTypeDictionary,
   buySellClickedOriginDictionary,
-  generateUniqueId,
   getNetworkFee,
   getOriginalTimestamp,
   interestDepositClickedOriginDictionary,
   linkBankClickedOriginDictionary,
   manageTabSelectionClickedSelectionDictionary,
+  recurringBuyCancelOrigin,
+  recurringBuyDetailsClickOrigin,
+  sendReceiveClickedOriginDictionary,
   settingsHyperlinkClickedDestinationDictionary,
   settingsTabClickedDestinationDictionary,
   swapClickedOriginDictionary,

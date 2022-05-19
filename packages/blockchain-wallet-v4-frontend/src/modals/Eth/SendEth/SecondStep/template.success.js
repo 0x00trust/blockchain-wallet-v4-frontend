@@ -15,6 +15,7 @@ import {
 
 const ConfirmWrapper = styled(Wrapper)`
   padding: 0px;
+  min-width: 100%;
 `
 const SummaryExchangeAmount = styled(ExchangeAmount)`
   justify-content: flex-end;
@@ -62,7 +63,7 @@ const Success = (props) => {
       <ConfirmWrapper>
         <LargeTableRow>
           <Text size='16px' weight={500}>
-            <FormattedMessage id='copy.from:' defaultMessage='From' />
+            <FormattedMessage id='copy.from' defaultMessage='From' />
             :&nbsp;
           </Text>
           <Text size='16px' weight={400} data-e2e={`${coin}FromWallet`}>

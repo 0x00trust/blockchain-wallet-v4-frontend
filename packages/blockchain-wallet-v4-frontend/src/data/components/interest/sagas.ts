@@ -7,12 +7,13 @@ import { Exchange, Remote } from '@core'
 import { APIType } from '@core/network/api'
 import {
   AccountTypes,
+  BSBalancesType,
   CoinType,
   InterestAfterTransactionType,
   PaymentValue,
+  Product,
   RatesType,
-  RemoteDataType,
-  SBBalancesType
+  RemoteDataType
 } from '@core/types'
 import { errorHandler } from '@core/utils'
 import { actions, selectors } from 'data'
@@ -44,6 +45,7 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
     getNextReceiveAddressForCoin,
     getOrUpdateProvisionalPaymentForCoin
   } = coinSagas({
+    api,
     coreSagas,
     networks
   })
@@ -62,7 +64,7 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
       const response: ReturnType<typeof api.getInterestAccountBalance> = yield call(
         api.getInterestAccountBalance
       )
-      yield put(A.fetchInterestBalanceSuccess(response))
+      yield put(A.fetchInterestBalanceSuccess(response || {}))
     } catch (e) {
       const error = errorHandler(e)
       yield put(A.fetchInterestBalanceFailure(error))
@@ -160,7 +162,7 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
       }
       // TODO figure out any replacement type
       const report = concat(reportHeaders, txList) as any
-      yield put(A.fetchInterestTransactionsReportSuccess({ ...report }))
+      yield put(A.fetchInterestTransactionsReportSuccess(report))
     } catch (e) {
       const error = errorHandler(e)
       yield put(A.fetchInterestTransactionsReportFailure(error))
@@ -232,8 +234,8 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
 
           // custodial account selected
           if (isCustodialAccountSelected) {
-            const custodialBalances: SBBalancesType = (yield select(
-              selectors.components.simpleBuy.getSBBalances
+            const custodialBalances: BSBalancesType = (yield select(
+              selectors.components.buySell.getBSBalances
             )).getOrFail('Failed to get balance')
 
             yield call(createLimits, undefined, custodialBalances)
@@ -276,9 +278,9 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
       actions.components.buySell.fetchBalanceSuccess.type,
       actions.components.buySell.fetchBalanceFailure.type
     ])
-    const custodialBalances = (yield select(
-      selectors.components.simpleBuy.getSBBalances
-    )).getOrFail('Failed to get balances')
+    const custodialBalances = (yield select(selectors.components.buySell.getBSBalances)).getOrFail(
+      'Failed to get balances'
+    )
     const custodialAccount = (yield call(getCustodialAccountForCoin, coin)).getOrFail(
       'Failed to fetch account'
     )
@@ -380,7 +382,7 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
 
   const routeToTxHash = function* ({ payload }: ReturnType<typeof A.routeToTxHash>) {
     const { coin, txHash } = payload
-    yield put(actions.router.push(`/${coin}/transactions`))
+    yield put(actions.router.push(`/coins/${coin}`))
     yield delay(1000)
     yield put(actions.form.change('walletTxSearch', 'search', txHash))
   }
@@ -434,8 +436,24 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
           throw new Error('Missing deposit address')
         }
 
-        // build and publish payment to network
-        const transaction = yield call(buildAndPublishPayment, coin, payment, depositAddress)
+        const hotWalletAddress = selectors.core.walletOptions
+          .getHotWalletAddresses(yield select(), Product.REWARDS)
+          .getOrElse(null)
+        let transaction
+        if (typeof hotWalletAddress !== 'string') {
+          console.error('Unable to retreive hotwallet address; falling back to deposit and sweep.')
+          transaction = yield call(buildAndPublishPayment, coin, payment, depositAddress)
+        } else {
+          // build and publish payment to network
+          transaction = yield call(
+            buildAndPublishPayment,
+            coin,
+            payment,
+            depositAddress,
+            hotWalletAddress
+          )
+        }
+
         // notify backend of incoming non-custodial deposit
         yield put(
           actions.components.send.notifyNonCustodialToCustodialTransfer(
@@ -544,8 +562,17 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
       )
       yield put(A.fetchShowInterestCardAfterTransactionSuccess({ afterTransaction }))
     } catch (e) {
-      const error = errorHandler(e)
-      yield put(A.fetchShowInterestCardAfterTransactionFailure({ error }))
+      // TODO: Make this error not break the order summary page. This is failing with the new card providers
+      // const error = errorHandler(e)
+      // yield put(A.fetchShowInterestCardAfterTransactionFailure({ error }))
+      yield put(
+        A.fetchShowInterestCardAfterTransactionSuccess({
+          // @ts-ignore
+          afterTransaction: {
+            show: false
+          }
+        })
+      )
     }
   }
 
@@ -583,8 +610,22 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
       yield put(A.fetchEDDWithdrawLimitsFailure({ error }))
     }
   }
+  const fetchEDDDepositLimits = function* ({
+    payload
+  }: ReturnType<typeof A.fetchEDDDepositLimits>) {
+    try {
+      yield put(A.fetchEDDDepositLimitsLoading())
+      const interestEDDDepositLimits: ReturnType<typeof api.getSavingsEDDDepositLimits> =
+        yield call(api.getSavingsEDDDepositLimits, payload.currency)
+      yield put(A.fetchEDDDepositLimitsSuccess({ interestEDDDepositLimits }))
+    } catch (e) {
+      const error = errorHandler(e)
+      yield put(A.fetchEDDWithdrawLimitsFailure({ error }))
+    }
+  }
 
   return {
+    fetchEDDDepositLimits,
     fetchEDDStatus,
     fetchEDDWithdrawLimits,
     fetchInterestAccount,

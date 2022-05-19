@@ -23,6 +23,7 @@ export const getData = (state: RootState) => {
     state
   ) as InterestFormErrorsType
   const interestLimitsR = selectors.components.interest.getInterestLimits(state)
+  const interestEDDStatusR = selectors.components.interest.getInterestEDDStatus(state)
   const interestRateR = selectors.components.interest.getInterestRate(state)
   const depositLimits = selectors.components.interest.getDepositLimits(state)
   const displayCoin = selectors.components.interest.getIsAmountDisplayedInCrypto(state)
@@ -32,9 +33,10 @@ export const getData = (state: RootState) => {
     string,
     FiatType
   >
-  const interestEDDWithdrawLimitsR = selectors.components.interest.getInterestEDDWithdrawLimits(
-    state
-  )
+  const interestEDDDepositLimitsR = selectors.components.interest.getInterestEDDDepositLimits(state)
+  const interestAccount = selectors.components.interest
+    .getInterestAccount(state)
+    .getOrElse({ accountRef: '' })
 
   const afterTransaction = selectors.components.interest
     .getAfterTransaction(state)
@@ -50,7 +52,8 @@ export const getData = (state: RootState) => {
       ethRates: ExtractSuccess<typeof ethRatesR>,
       payment: ExtractSuccess<typeof paymentR>,
       walletCurrency: ExtractSuccess<typeof walletCurrencyR>,
-      interestEDDWithdrawLimits
+      interestEDDDepositLimits,
+      interestEDDStatus
     ) => {
       const { coinfig } = window.coins[coin]
       const depositFee =
@@ -78,7 +81,9 @@ export const getData = (state: RootState) => {
         feeCrypto,
         feeFiat,
         formErrors,
-        interestEDDWithdrawLimits,
+        interestAccount,
+        interestEDDDepositLimits,
+        interestEDDStatus,
         interestLimits,
         interestRate,
         payment,
@@ -93,6 +98,7 @@ export const getData = (state: RootState) => {
     ethRatesR,
     paymentR,
     walletCurrencyR,
-    interestEDDWithdrawLimitsR
+    interestEDDDepositLimitsR,
+    interestEDDStatusR
   )
 }

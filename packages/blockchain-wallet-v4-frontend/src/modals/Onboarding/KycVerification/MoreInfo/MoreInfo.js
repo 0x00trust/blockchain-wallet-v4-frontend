@@ -4,7 +4,7 @@ import { connect } from 'react-redux'
 import styled from 'styled-components'
 
 import { Button } from 'blockchain-info-components'
-import { FooterShadowWrapper } from 'components/Form'
+import FooterShadowWrapper from 'components/Form/FooterShadowWrapper'
 import {
   BackButton,
   Footer,
@@ -58,11 +58,7 @@ const MoreInfo = ({ closeAllModals, goToNextStep }) => (
           <BackButton data-e2e='moreInfoCancelButton' onClick={closeAllModals}>
             <FormattedMessage id='buttons.cancel' defaultMessage='Cancel' />
           </BackButton>
-          <Button
-            nature='primary'
-            data-e2e='moreInfoContinueButton'
-            onClick={goToNextStep}
-          >
+          <Button nature='primary' data-e2e='moreInfoContinueButton' onClick={goToNextStep}>
             <FormattedMessage id='buttons.continue' defaultMessage='Continue' />
           </Button>
         </Footer>
@@ -71,10 +67,9 @@ const MoreInfo = ({ closeAllModals, goToNextStep }) => (
   </IdentityVerificationForm>
 )
 
-const mapDispatchToProps = dispatch => ({
-  goToNextStep: () =>
-    dispatch(actions.components.identityVerification.goToNextStep()),
-  closeAllModals: () => dispatch(actions.modals.closeAllModals())
+const mapDispatchToProps = (dispatch) => ({
+  closeAllModals: () => dispatch(actions.modals.closeAllModals()),
+  goToNextStep: () => dispatch(actions.components.identityVerification.goToNextStep())
 })
 
 export default connect(undefined, mapDispatchToProps)(MoreInfo)

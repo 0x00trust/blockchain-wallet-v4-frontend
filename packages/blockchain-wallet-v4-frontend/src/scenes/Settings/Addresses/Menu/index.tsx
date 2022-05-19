@@ -7,9 +7,10 @@ import { Field, reduxForm } from 'redux-form'
 import styled from 'styled-components'
 
 import { Icon, TabMenu, TabMenuItem, Text } from 'blockchain-info-components'
-import { TextBox } from 'components/Form'
+import TextBox from 'components/Form/TextBox'
 import HorizontalMenu from 'components/HorizontalMenu'
 import { StickyHeader } from 'components/Layout'
+import MenuHeader from 'components/MenuHeader'
 import { model } from 'data'
 import { media } from 'services/styles'
 
@@ -36,11 +37,7 @@ const SearchIcon = styled(Icon)`
   top: 10px;
   right: 10px;
 `
-const MenuHeader = styled.div`
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 1.5rem;
-`
+
 const Title = styled(Text)`
   margin: 4px 0;
 `
@@ -49,10 +46,7 @@ const MenuTop = () => (
   <StickyHeader>
     <MenuHeader>
       <Title size='26px' weight={600} color='black'>
-        <FormattedMessage
-          id='scenes.settings.menu.title'
-          defaultMessage='Wallets & Addresses'
-        />
+        <FormattedMessage id='scenes.settings.menu.title' defaultMessage='Wallets & Addresses' />
       </Title>
       <Text size='14px' weight={500} color='grey700'>
         <FormattedMessage
@@ -65,10 +59,7 @@ const MenuTop = () => (
       <Container>
         <TabMenu>
           <LinkContainer to='/settings/addresses/btc'>
-            <TabMenuItem
-              activeClassName='active'
-              data-e2e='btcWalletSettingsLink'
-            >
+            <TabMenuItem activeClassName='active' data-e2e='btcWalletSettingsLink'>
               <FormattedMessage
                 id='scenes.settings.addresses.menutop.btc'
                 defaultMessage='Bitcoin'
@@ -76,10 +67,7 @@ const MenuTop = () => (
             </TabMenuItem>
           </LinkContainer>
           <LinkContainer to='/settings/addresses/bch'>
-            <TabMenuItem
-              activeClassName='active'
-              data-e2e='bchWalletSettingsLink'
-            >
+            <TabMenuItem activeClassName='active' data-e2e='bchWalletSettingsLink'>
               <FormattedMessage
                 id='scenes.settings.addresses.menutop.bch'
                 defaultMessage='Bitcoin Cash'
@@ -87,10 +75,7 @@ const MenuTop = () => (
             </TabMenuItem>
           </LinkContainer>
           <LinkContainer to='/settings/addresses/eth'>
-            <TabMenuItem
-              activeClassName='active'
-              data-e2e='ethWalletSettingsLink'
-            >
+            <TabMenuItem activeClassName='active' data-e2e='ethWalletSettingsLink'>
               <FormattedMessage
                 id='scenes.settings.addresses.menutop.eth'
                 defaultMessage='Ethereum'
@@ -98,10 +83,7 @@ const MenuTop = () => (
             </TabMenuItem>
           </LinkContainer>
           <LinkContainer to='/settings/addresses/xlm'>
-            <TabMenuItem
-              activeClassName='active'
-              data-e2e='xlmWalletSettingsLink'
-            >
+            <TabMenuItem activeClassName='active' data-e2e='xlmWalletSettingsLink'>
               <FormattedMessage
                 id='scenes.settings.addresses.menutop.xlm'
                 defaultMessage='Stellar'
@@ -110,12 +92,7 @@ const MenuTop = () => (
           </LinkContainer>
         </TabMenu>
         <Search data-e2e='walletSettingsSearch'>
-          <Field
-            name='search'
-            height='40px'
-            placeholder='Search'
-            component={TextBox}
-          />
+          <Field name='search' height='40px' placeholder='Search' component={TextBox} />
           <SearchIcon name='magnifier' size='20px' />
         </Search>
       </Container>

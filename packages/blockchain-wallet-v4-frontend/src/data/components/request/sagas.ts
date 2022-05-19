@@ -14,6 +14,7 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
   // const logLocation = 'components/request/sagas'
   const { waitForUserData } = profileSagas({ api, coreSagas, networks })
   const { getNextReceiveAddressForCoin } = coinSagas({
+    api,
     coreSagas,
     networks
   })
@@ -35,9 +36,9 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
           break
         case SwapBaseCounterTypes.CUSTODIAL:
           yield call(waitForUserData)
-          const custodial: ReturnType<typeof api.getSBPaymentAccount> = yield call(
+          const custodial: ReturnType<typeof api.getBSPaymentAccount> = yield call(
             // @ts-ignore
-            api.getSBPaymentAccount,
+            api.getBSPaymentAccount,
             account.coin
           )
           address = custodial.address

@@ -1,13 +1,10 @@
-import React, { Children, useCallback } from 'react'
+import React, { useCallback } from 'react'
 import { FormattedMessage } from 'react-intl'
 
-import { Icon, Text } from 'blockchain-info-components'
-import { SBPaymentTypes } from '@core/network/api/simpleBuy/types'
+import { BSPaymentTypes } from '@core/types'
+import { Text } from 'blockchain-info-components'
+import { RecurringBuyNextPayment, RecurringBuyPeriods } from 'data/types'
 
-import {
-  RecurringBuyNextPayment,
-  RecurringBuyPeriods
-} from '../../../data/components/recurringBuy/types'
 import { OptionRightActionRow, OptionRightActionRowProps } from '../../Rows'
 import Container from '../Container'
 import Content from '../Content'
@@ -21,7 +18,7 @@ const RowDisplay = ({ method, paymentInfo, period, setPeriod }: RowDisplayProps)
   const date = new Date()
   const modifiedPaymentInfo: RecurringBuyNextPayment[] = [
     {
-      eligibleMethods: Object.values(SBPaymentTypes),
+      eligibleMethods: Object.values(BSPaymentTypes),
       nextPayment: date.toString(),
       period: RecurringBuyPeriods.ONE_TIME
     },
@@ -119,7 +116,7 @@ type Props = {
   children?: React.ReactNode
   headerAction: HeaderProps['onClick']
   headerMode: HeaderProps['mode']
-  method: SBPaymentTypes
+  method: BSPaymentTypes
   paymentInfo: RecurringBuyNextPayment[]
   setPeriod: (period: RecurringBuyPeriods) => void
 }

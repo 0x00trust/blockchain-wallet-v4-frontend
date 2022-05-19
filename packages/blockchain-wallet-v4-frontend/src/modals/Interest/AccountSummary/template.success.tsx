@@ -1,6 +1,6 @@
 import React from 'react'
 import { FormattedMessage } from 'react-intl'
-import moment from 'moment'
+import { addMonths, format, startOfMonth } from 'date-fns'
 import { pathOr } from 'ramda'
 
 import { Exchange } from '@core'
@@ -35,9 +35,9 @@ const AccountSummary: React.FC<Props> = (props) => {
     accountBalances,
     coin,
     flagEDDInterestFileUpload,
+    handleBSClick,
     handleClose,
     handleDepositClick,
-    handleSBClick,
     interestActions,
     interestLimits,
     interestRate,
@@ -317,21 +317,25 @@ const AccountSummary: React.FC<Props> = (props) => {
               width='192px'
             >
               <Text weight={600} color='white'>
-                <FormattedMessage id='buttons.transfer' defaultMessage='Transfer' />
+                <FormattedMessage
+                  id='buttons.add_coin'
+                  defaultMessage='Add {displayName}'
+                  values={{ displayName: coinfig.displaySymbol }}
+                />
               </Text>
             </Button>
             <Button
-              data-e2e='interestDeposit'
+              data-e2e='interestDepositBuyButton'
               height='48px'
               nature='empty'
-              onClick={() => handleSBClick(coin)}
+              onClick={() => handleBSClick(coin)}
               width='192px'
             >
               <Text size='16px' weight={600} color='blue600'>
                 <FormattedMessage
                   id='buttons.buy_coin'
                   defaultMessage='Buy {displayName}'
-                  values={{ displayName: coinfig.name }}
+                  values={{ displayName: coinfig.displaySymbol }}
                 />
               </Text>
             </Button>
@@ -371,7 +375,7 @@ const AccountSummary: React.FC<Props> = (props) => {
             {account ? (
               <Text color='grey600' size='14px' weight={500}>
                 {parseInt(account.balance, 10) > 0 || (stepMetadata && stepMetadata.depositSuccess)
-                  ? moment().add(1, 'month').startOf('month').format('MMMM D, YYYY')
+                  ? format(startOfMonth(addMonths(new Date(), 1)), 'MMMM d, yyyy')
                   : '---'}
               </Text>
             ) : (
@@ -454,7 +458,11 @@ const AccountSummary: React.FC<Props> = (props) => {
               onClick={() => interestActions.showInterestModal({ coin, step: 'WITHDRAWAL' })}
             >
               <Text color='white' size='16px' weight={600}>
-                <FormattedMessage id='buttons.withdraw' defaultMessage='Withdraw' />
+                <FormattedMessage
+                  id='buttons.withdraw_coin'
+                  defaultMessage='Withdraw {displayName}'
+                  values={{ displayName: coinfig.displaySymbol }}
+                />
               </Text>
             </Button>
           </ButtonContainer>
@@ -466,8 +474,8 @@ const AccountSummary: React.FC<Props> = (props) => {
 
 type ParentProps = {
   coin: CoinType
+  handleBSClick: (string) => void
   handleDepositClick: () => void
-  handleSBClick: (string) => void
   stepMetadata: InterestStepMetadata
   walletCurrency: FiatType
 }

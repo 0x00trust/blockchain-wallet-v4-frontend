@@ -1,23 +1,22 @@
 import React from 'react'
 import { FormattedMessage } from 'react-intl'
-import Bowser from 'bowser'
 import PropTypes from 'prop-types'
+import { isEmpty } from 'ramda'
 import { Field, reduxForm } from 'redux-form'
 import styled from 'styled-components'
 
-import { Banner, Button, Link, Text, TooltipHost, TooltipIcon } from 'blockchain-info-components'
 import { Remote } from '@core'
+import { Banner, Button, Link, Text, TooltipHost, TooltipIcon } from 'blockchain-info-components'
 import ComboDisplay from 'components/Display/ComboDisplay'
-import {
-  Form,
-  FormGroup,
-  FormItem,
-  FormLabel,
-  SelectBoxCoin,
-  SelectBoxXlmAddresses,
-  TextAreaDebounced,
-  TextBox
-} from 'components/Form'
+import UpgradeToGoldBanner from 'components/Flyout/Banners/UpgradeToGold'
+import Form from 'components/Form/Form'
+import FormGroup from 'components/Form/FormGroup'
+import FormItem from 'components/Form/FormItem'
+import FormLabel from 'components/Form/FormLabel'
+import SelectBoxCoin from 'components/Form/SelectBoxCoin'
+import SelectBoxXlmAddresses from 'components/Form/SelectBoxXlmAddresses'
+import TextAreaDebounced from 'components/Form/TextAreaDebounced'
+import TextBox from 'components/Form/TextBox'
 import QRCodeCapture from 'components/QRCode/Capture'
 import { CustodyToAccountMessage, Row } from 'components/Send'
 import MnemonicRequiredForCustodySend from 'components/Send/RecoveryPhrase'
@@ -25,6 +24,7 @@ import UnstoppableDomains from 'components/UnstoppableDomains'
 import { model } from 'data'
 import { required, validXlmAddress } from 'services/forms'
 
+import { TIER_TYPES } from '../../../Settings/TradingLimits/model'
 import { ErrorBanner } from './ErrorBanner'
 import { InfoBanner } from './InfoBanner'
 import { NoAccountTemplate } from './NoAccountTemplate'
@@ -34,6 +34,7 @@ import {
   balanceReserveAmount,
   insufficientFunds,
   invalidAmount,
+  isSendLimitOver,
   shouldError,
   shouldWarn,
   validateMemo,
@@ -69,10 +70,8 @@ const MemoField = styled.div`
 const FirstStep = (props) => {
   const {
     activeField,
-    amount,
     balanceStatus,
     error,
-    excludeLockbox,
     fee,
     from,
     handleSubmit,
@@ -82,16 +81,14 @@ const FirstStep = (props) => {
     isMnemonicVerified,
     noAccount,
     pristine,
+    sendLimits,
     submit,
     submitting,
-    swapActions
+    swapActions,
+    verifyIdentity
   } = props
   const amountActive = activeField === 'amount'
-  const isFromLockbox = from && from.type === 'LOCKBOX'
   const isFromCustody = from && from.type === 'CUSTODIAL'
-  const browser = Bowser.getParser(window.navigator.userAgent)
-  const isBrowserSupported = browser.satisfies(model.components.lockbox.supportedBrowsers)
-  const disableLockboxSend = isFromLockbox && !isBrowserSupported
   const disableCustodySend = isFromCustody && !isMnemonicVerified
 
   return (
@@ -112,7 +109,6 @@ const FirstStep = (props) => {
             component={SelectBoxXlmAddresses}
             includeAll={false}
             validate={[required]}
-            excludeLockbox={excludeLockbox}
             includeCustodial
           />
         </FormItem>
@@ -120,26 +116,9 @@ const FirstStep = (props) => {
       {noAccount && <NoAccountTemplate swapActions={swapActions} />}
       {!noAccount && (
         <>
-          {isFromLockbox && !disableLockboxSend && (
-            <WarningBanners type='info'>
-              <Text color='warning' size='13px'>
-                <FormattedMessage
-                  id='modals.sendxlm.firststep.lockboxwarn'
-                  defaultMessage='You will need to connect your Lockbox to complete this transaction.'
-                />
-              </Text>
-            </WarningBanners>
-          )}
-          {disableLockboxSend && (
-            <WarningBanners type='warning'>
-              <Text color='warning' size='12px'>
-                <FormattedMessage
-                  id='modals.sendxlm.firststep.blockbrowser'
-                  defaultMessage='Sending Stellar from Lockbox can only be done while using the Brave, Chrome, Firefox or Opera browsers.'
-                />
-              </Text>
-            </WarningBanners>
-          )}
+          <FormGroup>
+            <CustodyToAccountMessage account={from} />
+          </FormGroup>
           <FormGroup margin={isFromCustody ? '15px' : '8px'}>
             <FormItem>
               <FormLabel htmlFor='to'>
@@ -171,9 +150,6 @@ const FirstStep = (props) => {
             </FormItem>
           </FormGroup>
           <UnstoppableDomains form={model.components.sendXlm.FORM} />
-          <FormGroup>
-            <CustodyToAccountMessage coin='XLM' account={from} amount={amount} />
-          </FormGroup>
           <FormGroup margin='15px'>
             <FormItem>
               <FormLabel htmlFor='amount'>
@@ -187,7 +163,8 @@ const FirstStep = (props) => {
                 component={XlmFiatConverter}
                 error={error}
                 coin='XLM'
-                validate={[required, invalidAmount, insufficientFunds]}
+                validate={[required, invalidAmount, insufficientFunds, isSendLimitOver]}
+                errorBottom
                 data-e2e='sendXlm'
                 marginTop='8px'
               />
@@ -195,56 +172,54 @@ const FirstStep = (props) => {
           </FormGroup>
           {amountActive && !error && !isFromCustody && <InfoBanner {...props} />}
           {error && !isFromCustody && <ErrorBanner error={error} />}
-          {!isFromCustody && (
-            <FormGroup margin='15px'>
-              <FormItem>
-                <FormLabel htmlFor='memo'>
-                  <FormattedMessage id='modals.sendxlm.firststep.txmemo' defaultMessage='Memo' />
-                  <TooltipHost id='sendxlm.firststep.memotooltip'>
-                    <TooltipIcon name='info' size='12px' />
-                  </TooltipHost>
-                </FormLabel>
-                <MemoField>
-                  <Field
-                    name='memo'
-                    errorBottom
-                    validate={validateMemo}
-                    component={TextBox}
-                    placeholder='Enter text or ID for recipient (optional)'
-                    data-e2e='sendXlmMemoText'
-                    noLastPass
+          <FormGroup margin='15px'>
+            <FormItem>
+              <FormLabel htmlFor='memo'>
+                <FormattedMessage id='modals.sendxlm.firststep.txmemo' defaultMessage='Memo' />
+                <TooltipHost id='sendxlm.firststep.memotooltip'>
+                  <TooltipIcon name='info' size='12px' />
+                </TooltipHost>
+              </FormLabel>
+              <MemoField>
+                <Field
+                  name='memo'
+                  errorBottom
+                  validate={validateMemo}
+                  component={TextBox}
+                  placeholder='Enter text or ID for recipient (optional)'
+                  data-e2e='sendXlmMemoText'
+                  noLastPass
+                />
+                <Field
+                  name='memoType'
+                  errorBottom
+                  validate={validateMemoType}
+                  component={SelectBoxMemo}
+                  data-e2e='sendXlmMemoType'
+                />
+              </MemoField>
+            </FormItem>
+            {isDestinationExchange && (
+              <WarningBanners type='warning' data-e2e='sendXlmToExchangeAddress'>
+                <Text color='warning' size='12px'>
+                  <FormattedMessage
+                    id='modals.sendxlm.firststep.sendtoexchange2'
+                    defaultMessage='Sending XLM to an exchange often requires adding a memo. Failing to include a required memo may result in a loss of funds!'
                   />
-                  <Field
-                    name='memoType'
-                    errorBottom
-                    validate={validateMemoType}
-                    component={SelectBoxMemo}
-                    data-e2e='sendXlmMemoType'
-                  />
-                </MemoField>
-              </FormItem>
-              {isDestinationExchange && (
-                <WarningBanners type='warning' data-e2e='sendXlmToExchangeAddress'>
-                  <Text color='warning' size='12px'>
-                    <FormattedMessage
-                      id='modals.sendxlm.firststep.sendtoexchange2'
-                      defaultMessage='Sending XLM to an exchange often requires adding a memo. Failing to include a required memo may result in a loss of funds!'
-                    />
-                    <Link
-                      href='https://support.blockchain.com/hc/en-us/articles/360018797312-Stellar-memos'
-                      target='_blank'
-                      size='11px'
-                      weight={700}
-                      altFont
-                      color='red600'
-                    >
-                      <FormattedMessage id='buttons.learn_more' defaultMessage='Learn More' />
-                    </Link>
-                  </Text>
-                </WarningBanners>
-              )}
-            </FormGroup>
-          )}
+                  <Link
+                    href='https://support.blockchain.com/hc/en-us/articles/360018797312-Stellar-memos'
+                    target='_blank'
+                    size='11px'
+                    weight={700}
+                    altFont
+                    color='red600'
+                  >
+                    <FormattedMessage id='buttons.learn_more' defaultMessage='Learn More' />
+                  </Link>
+                </Text>
+              </WarningBanners>
+            )}
+          </FormGroup>
 
           <FormGroup margin='15px'>
             <FormItem>
@@ -281,6 +256,11 @@ const FirstStep = (props) => {
             </FormItem>
           </FormGroup>
           {isFromCustody && !isMnemonicVerified ? <MnemonicRequiredForCustodySend /> : null}
+          {isFromCustody &&
+          !isEmpty(sendLimits) &&
+          sendLimits?.suggestedUpgrade?.requiredTier === TIER_TYPES.GOLD ? (
+            <UpgradeToGoldBanner limits={sendLimits} verifyIdentity={verifyIdentity} />
+          ) : null}
           <SubmitFormGroup>
             <Button
               /*
@@ -295,7 +275,6 @@ const FirstStep = (props) => {
                 pristine ||
                 submitting ||
                 invalid ||
-                disableLockboxSend ||
                 disableCustodySend ||
                 !isDestinationChecked ||
                 Remote.Loading.is(balanceStatus)

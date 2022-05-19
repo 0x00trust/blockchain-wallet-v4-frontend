@@ -1,10 +1,7 @@
 import React from 'react'
 import { FormattedMessage } from 'react-intl'
-import moment from 'moment'
-import styled from 'styled-components'
+import { addWeeks, format } from 'date-fns'
 
-import { Icon } from 'blockchain-info-components'
-import { Row } from 'components/Flyout'
 import { RecurringBuyPeriods } from 'data/types'
 
 const getPeriodTitleText = (period: RecurringBuyPeriods): React.ReactNode => {
@@ -40,23 +37,24 @@ const getPeriodTitleText = (period: RecurringBuyPeriods): React.ReactNode => {
 
 const getPeriodSubTitleText = (period: RecurringBuyPeriods): React.ReactNode => {
   let text
+  const date = new Date()
   switch (period) {
     default:
     case RecurringBuyPeriods.DAILY:
       text = <></>
       break
     case RecurringBuyPeriods.WEEKLY:
-      text = <>On {moment().format('dddd')}s</>
+      text = <>On {format(date, 'EEEE')}s</>
       break
     case RecurringBuyPeriods.BI_WEEKLY:
       text = (
         <>
-          On the {moment().format('Do')} and {moment().add(2, 'weeks').format('Do')}
+          On the {format(date, 'do')} and {format(addWeeks(date, 2), 'do')}
         </>
       )
       break
     case RecurringBuyPeriods.MONTHLY:
-      text = <>On the {moment().format('Do')}</>
+      text = <>On the {format(date, 'do')}</>
       break
   }
   return text

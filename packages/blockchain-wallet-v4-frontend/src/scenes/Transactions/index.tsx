@@ -1,22 +1,15 @@
 import React from 'react'
 import { FormattedMessage } from 'react-intl'
 import { connect, ConnectedProps } from 'react-redux'
+import { RouteComponentProps } from 'react-router'
 import { path, toLower } from 'ramda'
 import { bindActionCreators, compose, Dispatch } from 'redux'
 import { reduxForm } from 'redux-form'
 import styled from 'styled-components'
 
-import { Button, Icon, Text } from 'blockchain-info-components'
 import { Exchange } from '@core'
-import {
-  CoinfigType,
-  CoinType,
-  FiatType,
-  OrderType,
-  TimeRange,
-  WalletCurrencyType,
-  WalletFiatType
-} from '@core/types'
+import { CoinType, FiatType, OrderType, TimeRange, WalletFiatType } from '@core/types'
+import { Button, Icon, Text } from 'blockchain-info-components'
 import { SavedRecurringBuy } from 'components/Box'
 import EmptyResults from 'components/EmptyResults'
 import { SceneWrapper } from 'components/Layout'
@@ -134,9 +127,11 @@ class TransactionsContainer extends React.PureComponent<Props> {
 
   render() {
     const {
-      coin,
+      computedMatch,
       currency,
       hasTxResults,
+      interestEligible,
+      isGoldTier,
       isInvited,
       isRecurringBuy,
       isSearchEntered,
@@ -145,11 +140,13 @@ class TransactionsContainer extends React.PureComponent<Props> {
       recurringBuys,
       sourceType
     } = this.props
+    const { coin } = computedMatch.params
     const { coinfig } = window.coins[coin]
+    const interestEligibleCoin = interestEligible[coin] && interestEligible[coin]?.eligible
 
     return (
       <SceneWrapper>
-        <LazyLoadContainer onLazyLoad={loadMoreTxs}>
+        <LazyLoadContainer triggerDistance={200} onLazyLoad={loadMoreTxs}>
           <Header>
             <PageTitle>
               <CoinTitle>
@@ -167,21 +164,7 @@ class TransactionsContainer extends React.PureComponent<Props> {
                   <>
                     <Button
                       nature='primary'
-                      data-e2e='sellCrypto'
-                      width='100px'
                       style={{ marginRight: '8px' }}
-                      onClick={() => {
-                        this.props.buySellActions.showModal({
-                          cryptoCurrency: coin as CoinType,
-                          orderType: OrderType.SELL,
-                          origin: 'TransactionList'
-                        })
-                      }}
-                    >
-                      <FormattedMessage id='buttons.sell' defaultMessage='Sell' />
-                    </Button>
-                    <Button
-                      nature='primary'
                       data-e2e='buyCrypto'
                       width='100px'
                       onClick={() => {
@@ -193,6 +176,38 @@ class TransactionsContainer extends React.PureComponent<Props> {
                       }}
                     >
                       <FormattedMessage id='buttons.buy' defaultMessage='Buy' />
+                    </Button>
+                    <Button
+                      disabled={!isGoldTier || !interestEligibleCoin}
+                      style={{ marginRight: '8px' }}
+                      width='100px'
+                      nature='primary'
+                      data-e2e='earnInterest'
+                      onClick={() =>
+                        this.props.interestActions.showInterestModal({
+                          coin,
+                          step: 'ACCOUNT_SUMMARY'
+                        })
+                      }
+                    >
+                      <FormattedMessage
+                        id='scenes.interest.summarycard.earnOnly'
+                        defaultMessage='Earn'
+                      />
+                    </Button>
+                    <Button
+                      nature='light'
+                      data-e2e='sellCrypto'
+                      width='100px'
+                      onClick={() => {
+                        this.props.buySellActions.showModal({
+                          cryptoCurrency: coin as CoinType,
+                          orderType: OrderType.SELL,
+                          origin: 'TransactionList'
+                        })
+                      }}
+                    >
+                      <FormattedMessage id='buttons.sell' defaultMessage='Sell' />
                     </Button>
                   </>
                 )}
@@ -242,7 +257,7 @@ class TransactionsContainer extends React.PureComponent<Props> {
               <ExplainerText>{getIntroductionText(coin)}</ExplainerText>
             </ExplainerWrapper>
             <StatsContainer>
-              <WalletBalanceDropdown coin={coin} />
+              <WalletBalanceDropdown key={coin} coin={coin} />
               {coinfig.type.name !== 'FIAT' && <CoinPerformance coin={coin} />}
             </StatsContainer>
           </Header>
@@ -288,13 +303,14 @@ class TransactionsContainer extends React.PureComponent<Props> {
           {hasTxResults && sourceType && sourceType === 'INTEREST' && <InterestTransactions />}
           {hasTxResults &&
             (!sourceType || sourceType !== 'INTEREST') &&
-            pages.map((value) => (
+            pages.map((value, i) => (
               <TransactionList
                 coin={coin}
                 coinTicker={coinfig.symbol}
                 currency={currency}
                 data={value}
-                key={coinfig.symbol}
+                // eslint-disable-next-line react/no-array-index-key
+                key={`${coin}${i}`}
                 onArchive={this.handleArchive}
                 onLoadMore={loadMoreTxs}
                 onRefresh={this.handleRefresh}
@@ -307,19 +323,20 @@ class TransactionsContainer extends React.PureComponent<Props> {
   }
 }
 
-const mapStateToProps = (state, ownProps: OwnProps): LinkStatePropsType =>
-  getData(state, ownProps.coin, ownProps.coinfig)
+const mapStateToProps = (state, ownProps: OwnProps): LinkStatePropsType => getData(state, ownProps)
 
 const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps) => {
-  const { coin, coinfig } = ownProps
+  const { coin } = ownProps.computedMatch.params
+  const { coinfig } = window.coins[coin]
   const baseActions = {
     brokerageActions: bindActionCreators(actions.components.brokerage, dispatch),
     buySellActions: bindActionCreators(actions.components.buySell, dispatch),
+    interestActions: bindActionCreators(actions.components.interest, dispatch),
     miscActions: bindActionCreators(actions.core.data.misc, dispatch),
     recurringBuyActions: bindActionCreators(actions.components.recurringBuy, dispatch),
     withdrawActions: bindActionCreators(actions.components.withdraw, dispatch)
   }
-  if (coinfig.type.erc20Address) {
+  if (selectors.core.data.coins.getErc20Coins().includes(coin)) {
     return {
       ...baseActions,
       fetchData: () => dispatch(actions.core.data.eth.fetchErc20Data(coin)),
@@ -327,7 +344,10 @@ const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps) => {
       loadMoreTxs: () => dispatch(actions.components.ethTransactions.loadMoreErc20(coin))
     }
   }
-  if (selectors.core.data.coins.getCustodialCoins().includes(coin)) {
+  if (
+    selectors.core.data.coins.getCustodialCoins().includes(coin) ||
+    selectors.core.data.coins.getDynamicSelfCustodyCoins().includes(coin)
+  ) {
     return {
       ...baseActions,
       fetchData: () => {},
@@ -357,10 +377,7 @@ const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps) => {
 
 const connector = connect(mapStateToProps, mapDispatchToProps)
 
-export type OwnProps = {
-  coin: WalletCurrencyType
-  coinfig: CoinfigType
-}
+export type OwnProps = RouteComponentProps
 
 export type SuccessStateType = {
   currency: FiatType
@@ -378,7 +395,7 @@ type LinkStatePropsType = SuccessStateType
 
 type Props = OwnProps & LinkStatePropsType & ConnectedProps<typeof connector>
 
-const enhance = compose<any>(
+const enhance = compose<React.ComponentType>(
   reduxForm({
     form: model.form.WALLET_TX_SEARCH,
     initialValues: { source: 'all' }

@@ -47,6 +47,11 @@ export default () => {
       yield put(actions.components.interest.fetchInterestBalance())
       yield put(actions.components.buySell.fetchBalance({}))
       yield put(actions.components.buySell.fetchOrders())
+      // TODO: SELF_CUSTODY, remove
+      const stxEligibility = selectors.coins.getStxSelfCustodyAvailablity(yield select())
+      if (stxEligibility) {
+        yield put(actions.core.data.coins.fetchData())
+      }
       // Prices (new approach)
       yield put(actions.prices.fetchCoinPrices())
       // Rates
@@ -54,39 +59,37 @@ export default () => {
       // Custodial Swaps
       yield put(actions.custodial.fetchRecentSwapTxs())
 
-      const pathname = yield select(selectors.router.getPathname)
-      const maybeCoin = toUpper(pathname.split('/')[1])
+      const pathname = (yield select(selectors.router.getPathname))?.toLowerCase()
+      const maybeCoin = toUpper(pathname.split('/')[2] || '')
 
       switch (true) {
-        case contains('/bch/transactions', pathname):
+        case contains('coins/BCH', pathname):
           yield call(refreshBchTransactions)
           break
-        case contains('/btc/transactions', pathname):
+        case contains('coins/BTC', pathname):
           yield call(refreshBtcTransactions)
           break
-        case contains('/eth/transactions', pathname):
+        case contains('coins/ETH', pathname):
           yield call(refreshEthTransactions)
           break
-        case contains('/xlm/transactions', pathname):
+        case contains('coins/XLM', pathname):
           yield call(refreshXlmTransactions)
           break
-        case !!window.coins[maybeCoin]?.coinfig?.type?.erc20Address:
+        case selectors.core.data.coins.getErc20Coins().includes(maybeCoin):
           yield call(refreshErc20Transactions, pathname.split('/')[1])
           break
+        case selectors.core.data.coins.getDynamicSelfCustodyCoins().includes(maybeCoin):
         case selectors.core.data.coins.getCustodialCoins().includes(maybeCoin):
           yield call(refreshCoinTransactions, maybeCoin)
           break
-        case contains('/eur/transactions', pathname):
+        case contains('coins/EUR', pathname):
           yield put(actions.core.data.fiat.fetchTransactions('EUR', true))
           break
-        case contains('/gbp/transactions', pathname):
+        case contains('coins/GBP', pathname):
           yield put(actions.core.data.fiat.fetchTransactions('GBP', true))
           break
-        case contains('/usd/transactions', pathname):
+        case contains('coins/USD', pathname):
           yield put(actions.core.data.fiat.fetchTransactions('USD', true))
-          break
-        case contains('/lockbox/', pathname):
-          yield put(actions.components.lockbox.initializeDashboard(pathname.split('/')[3]))
           break
         case contains('profile', pathname):
         case contains('/airdrops', pathname):

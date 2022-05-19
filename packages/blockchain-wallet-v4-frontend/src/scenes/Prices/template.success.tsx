@@ -1,9 +1,12 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { FormattedMessage } from 'react-intl'
 import { useGlobalFilter, useSortBy, useTable } from 'react-table'
 import styled from 'styled-components'
 
-import { CellText, getTableColumns, HeaderText, TableWrapper } from './Table'
+import { CellText, HeaderText, HeaderToggle, TableWrapper } from 'components/Table'
+
+import { Props as _P, SuccessStateType as _S } from '.'
+import { getTableColumns } from './Table'
 
 const NoResultsWrapper = styled.div`
   display: flex;
@@ -12,21 +15,38 @@ const NoResultsWrapper = styled.div`
   margin-top: 120px;
 `
 
-const options = {
-  disableMultiSort: true,
-  disableSortRemove: true
-}
+export const TableBodyWrapper = styled.div`
+  height: 100%;
+  flex: 1 1 auto;
+  overflow: hidden;
+`
 
 const initialState = {
-  sortBy: [{ desc: true, id: 'price' }]
+  sortBy: [{ desc: true, id: 'marketCap' }]
 }
 
-const PricesTable = (props) => {
-  const { buySellActions, data, modalActions, routerActions, walletCurrency } = props
+const PricesTable = (props: Props) => {
+  const {
+    buySellActions,
+    data,
+    formActions,
+    modalActions,
+    routerActions,
+    swapActions,
+    walletCurrency
+  } = props
 
-  const columns = React.useMemo(() => {
-    getTableColumns({ buySellActions, modalActions, routerActions, walletCurrency })
-  }, [])
+  const columns = useMemo(
+    getTableColumns({
+      buySellActions,
+      formActions,
+      modalActions,
+      routerActions,
+      swapActions,
+      walletCurrency
+    }),
+    []
+  )
 
   const {
     getTableBodyProps,
@@ -41,7 +61,10 @@ const PricesTable = (props) => {
       columns,
       data,
       initialState,
-      ...options
+      ...{
+        disableMultiSort: true,
+        disableSortRemove: true
+      }
     },
     useGlobalFilter,
     useSortBy
@@ -59,7 +82,7 @@ const PricesTable = (props) => {
     state.globalFilter
 
   return (
-    <TableWrapper>
+    <TableWrapper cellWidth='16%' minCellWidth='150px' height='calc(100% - 97px)'>
       {state.globalFilter?.length && !rows.length ? (
         <NoResultsWrapper>
           <CellText color='grey900' size='18px'>
@@ -75,54 +98,57 @@ const PricesTable = (props) => {
           </CellText>
         </NoResultsWrapper>
       ) : (
-        <table {...getTableProps()}>
-          <thead>
-            {/* eslint-disable */}
-            {headerGroups.map(headerGroup => (
-              <tr {...headerGroup.getHeaderGroupProps()}> 
-                {headerGroup.headers.map(column => (
-                  <th
-                    key={column.key}
-                    {...column.getHeaderProps(column.getSortByToggleProps())}
-                  >
-                    <HeaderText>
-                      {column.render('Header')}
-                      <div>
-                        {column.isSorted ? (
-                          column.isSortedDesc ? (
-                            <span>▾</span>
+        <div {...getTableProps()} className='table'>
+          <div className='thead'>
+            {headerGroups.map((headerGroup, i) => {
+              const key = headerGroup.headers[i].id
+              return (
+                <div key={key} {...headerGroup.getHeaderGroupProps()} className='tr'>
+                  {headerGroup.headers.map((column) => (
+                    <div
+                      key={column.key}
+                      {...column.getHeaderProps(column.getSortByToggleProps())}
+                      className='th'
+                    >
+                      <HeaderText>
+                        {column.render('Header')}
+                        <div>
+                          {column.isSorted ? (
+                            column.isSortedDesc ? (
+                              <HeaderToggle>▾</HeaderToggle>
+                            ) : (
+                              <HeaderToggle>▴</HeaderToggle>
+                            )
                           ) : (
-                            <span>▴</span>
-                          )
-                        ) : (
-                          ''
-                        )}
-                      </div>
-                    </HeaderText>
-                  </th>
-                ))}
-              </tr>
-            ))}
-            {/* eslint-enable */}
-          </thead>
-          <tbody {...getTableBodyProps()}>
+                            ''
+                          )}
+                        </div>
+                      </HeaderText>
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+          <TableBodyWrapper {...getTableBodyProps()} className='tbody'>
             {rows.map((row) => {
               prepareRow(row)
               return (
-                <tr key={`row-${row.id}`} {...row.getRowProps()}>
+                <div key={`row-${row.id}`} {...row.getRowProps()} className='tr'>
                   {row.cells.map((cell) => (
-                    <td key={`cell-${cell.row.id}`} {...cell.getCellProps()}>
+                    <div key={`cell-${cell.row.id}`} {...cell.getCellProps()} className='td'>
                       {cell.render('Cell')}
-                    </td>
+                    </div>
                   ))}
-                </tr>
+                </div>
               )
             })}
-          </tbody>
-        </table>
+          </TableBodyWrapper>
+        </div>
       )}
     </TableWrapper>
   )
 }
 
+type Props = _P & { data: _S }
 export default PricesTable

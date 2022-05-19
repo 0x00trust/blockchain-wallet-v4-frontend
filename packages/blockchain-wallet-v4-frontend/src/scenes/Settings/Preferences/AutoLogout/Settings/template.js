@@ -5,7 +5,9 @@ import { Field, reduxForm } from 'redux-form'
 import styled from 'styled-components'
 
 import { Button, Text } from 'blockchain-info-components'
-import { FormGroup, FormItem, NumberBox } from 'components/Form'
+import FormGroup from 'components/Form/FormGroup'
+import FormItem from 'components/Form/FormItem'
+import NumberBox from 'components/Form/NumberBox'
 import { SettingForm, SettingWrapper } from 'components/Setting'
 import { spacing } from 'services/styles'
 
@@ -26,7 +28,7 @@ const ButtonWrapper = styled.div`
   }
 `
 
-const Settings = props => {
+const Settings = (props) => {
   const { handleSubmit, handleToggle, invalid, submitting } = props
 
   return (
@@ -56,12 +58,7 @@ const Settings = props => {
           </Text>
         </FormGroup>
         <ButtonWrapper>
-          <Button
-            nature='empty'
-            capitalize
-            onClick={handleToggle}
-            data-e2e='cancelAutoLogout'
-          >
+          <Button nature='empty' capitalize onClick={handleToggle} data-e2e='cancelAutoLogout'>
             <FormattedMessage id='buttons.cancel' defaultMessage='Cancel' />
           </Button>
           <Button
@@ -83,8 +80,7 @@ const Settings = props => {
 }
 
 Settings.propTypes = {
-  handleToggle: PropTypes.func.isRequired,
-  handleClick: PropTypes.func.isRequired
+  handleToggle: PropTypes.func.isRequired
 }
 
 export default reduxForm({ form: 'settingAutoLogoutTime' })(Settings)

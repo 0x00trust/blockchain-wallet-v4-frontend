@@ -1,13 +1,15 @@
+import { IngestedSelfCustodyType } from '@core/network/api/coin/types'
 import {
-  FiatSBAndSwapTransactionType,
-  ProcessedTxType,
-  SBOrderType,
-  SBTransactionType
+  BSOrderType,
+  BSTransactionType,
+  FiatBSAndSwapTransactionType,
+  ProcessedTxType
 } from '@core/types'
 
 export type TransferType = 'sent' | 'received' | 'transferred' | ''
 export type TxType =
-  | SBTransactionType
-  | SBOrderType
+  | BSTransactionType
+  | BSOrderType
   | ProcessedTxType
-  | FiatSBAndSwapTransactionType
+  | FiatBSAndSwapTransactionType
+  | IngestedSelfCustodyType

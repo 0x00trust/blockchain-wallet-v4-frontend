@@ -1,18 +1,17 @@
-import adBitcoinGames from './img/ad-bitcoin-games.png'
-import adBitcoinGames2 from './img/ad-bitcoin-games@2x.png'
 import airdropEnrolled from './img/airdrop-enrolled.png'
 import airdropWelcome from './img/airdrop-welcome.png'
 import airdropWelcome2 from './img/airdrop-welcome@2x.png'
 import airdropWelcomeBanner from './img/airdrop-welcome-banner.png'
 import airdropWelcomeBanner2 from './img/airdrop-welcome-banner@2x.png'
 import alert from './img/alert.svg'
-import allowCamera from './img/allow-camera.png'
-import allowCamera2 from './img/allow-camera@2x.png'
-import allowCamera3 from './img/allow-camera@3x.png'
+import alertOrange from './img/alert-orange.svg'
 import appleAppStoreBadge from './img/apple-app-store-badge.svg'
+import applePay from './img/apple-pay-icon.svg'
+import arrowLeft from './img/arrow-left.svg'
 import bank from './img/bank.svg'
+import bankEmpty from './img/bank-empty.svg'
+import bankEmptyBlue from './img/bank-empty-blue.svg'
 import bankError from './img/bank-error.svg'
-import bankExpired from './img/bank-expired.svg'
 import bankRejected from './img/bank-rejected.svg'
 import bankSuccess from './img/bank-success.svg'
 import bankLogoAcorns from './img/banks/bank-logo-acorns.svg'
@@ -34,123 +33,112 @@ import bankLogoUsaa from './img/banks/bank-logo-usaa.svg'
 import bankLogoVenmo from './img/banks/bank-logo-venmo.svg'
 import bankLogoWellsFargo from './img/banks/bank-logo-wells-fargo.svg'
 import bankLogoDagSite from './img/banks/bank-logo-yodlee-test.svg'
+import barChart from './img/bar-chart.svg'
 import blockchainIcon from './img/bc-icon.svg'
 import blockchainLogo from './img/bc-logo.svg'
 import blockchainLogoCircle from './img/bc-logo-circle.svg'
 import bgBannerPattern from './img/bg-banner-pattern.svg'
 import bgBannerPatternLg from './img/bg-banner-pattern-lg.svg'
 import bgPattern from './img/bg-pattern.svg'
+import bgPatternLatam from './img/bg-pattern-latam.svg'
 import bitpayLogo from './img/bitpay-logo.svg'
 import blankCard from './img/blank-card.svg'
-import buySellColor from './img/buy-sell-color.svg'
-import buySellGrey from './img/buy-sell-grey.svg'
+import blockchainGold from './img/blockchain-gold.svg'
+import blockchainSilver from './img/blockchain-silver.svg'
+import blueVerified from './img/blue-verified.svg'
+import buyBlueCircle from './img/buy-blue-circle.svg'
 import buySellLearnMore from './img/buy-sell-learn-more.png'
 import buySellLearnMore2 from './img/buy-sell-learn-more@2x.png'
 import buyWallet from './img/buy-wallet.svg'
+import buyWhiteCircle from './img/buy-white-circle.svg'
+import cardErrorIcon from './img/card-error-icon.svg'
+import cardWarningIcon from './img/card-warning-icon.svg'
+import cartGreen from './img/cart-green.svg'
 import chartPlaceholder from './img/chart-placeholder1.png'
-import checkmarkGreen from './img/checkmark-green.svg'
+import checkEmptyBlue from './img/check-empty-blue.svg'
+import checkEmptyWhite from './img/check-empty-white.svg'
+import checkmarkCircleGreen from './img/checkmark-circle-green.svg'
 import circleEmpty from './img/circle-empty.svg'
 import closeError from './img/close-error.svg'
 import cloudCheck from './img/cloud_check.svg'
-import coinPax from './img/coin-pax.svg'
-// coin logos
-import coins from './img/coins'
+import creditCard from './img/credit-card.svg'
+import creditCardBlue from './img/credit-card-blue.svg'
+import introCard from './img/debitCard/intro-card.png'
+import orderFailed from './img/debitCard/order-failed.png'
+import orderMyCard from './img/debitCard/order-my-card.png'
+import orderSuccess from './img/debitCard/order-success.png'
 import emailError from './img/email-error.svg'
 import emailSuccess from './img/email-success.svg'
+import emailVerified from './img/email-verified.svg'
 import emptySearch from './img/empty-search.svg'
 import emptyTx from './img/empty-tx.svg'
-import ethAirdrop from './img/eth-airdrop.png'
-import ethAirdrop2 from './img/eth-airdrop@2x.png'
 import exchange from './img/exchange.svg'
-import exchangeLogo from './img/exchange-logo.svg'
-import facebookWhite from './img/facebook-white.svg'
-import failedKyc from './img/failed-kyc.png'
-import failedKyc2 from './img/failed-kyc@2x.png'
-import failedKyc3 from './img/failed-kyc@3x.png'
+import exchangeGrayscale from './img/exchange-grayscale.svg'
+import exchangeNoBackground from './img/exchange-no-background.svg'
+import fiatIcons from './img/fiatIcons'
 import fileDelete from './img/file-delete.svg'
 import fileDownload from './img/file-download.svg'
-import fintecture from './img/fintecture.svg'
-import goldApproved from './img/gold-approved.svg'
+import globe from './img/globe.svg'
 import goldNotice from './img/gold-notice.png'
 import goldVerified from './img/gold-verified.svg'
 import googleAuthenticator from './img/google-authenticator.png'
+import googlePay from './img/google-pay-icon.svg'
 import googlePlayBadge from './img/google-play-badge.svg'
+import greyVerified from './img/grey-verified.svg'
+import identification from './img/identification.svg'
 import identityVerification from './img/identity-verification.svg'
-import introBankGif from './img/intro-bank.gif'
-import introCartGif from './img/intro-cart.gif'
+import instagram from './img/instagram.svg'
+import interest from './img/interest.svg'
 import introHand from './img/intro-hand.png'
-import introLock from './img/intro-lock.png'
-import introReceiveGif from './img/intro-receive.gif'
-import introSendGif from './img/intro-send.gif'
-import introSend from './img/intro-send.png'
-import introSwapGif from './img/intro-swap.gif'
-import introSwap from './img/intro-swap.png'
-import linkedinWhite from './img/linkedin-white.svg'
-import deviceLockbox from './img/lockbox/device-lockbox.png'
-import deviceNanoS from './img/lockbox/device-nano.png'
-import lockboxFailed from './img/lockbox/firmware-bad.png'
-import lockboxFailed2 from './img/lockbox/firmware-bad@2x.png'
-import lockboxFailed3 from './img/lockbox/firmware-bad@3x.png'
-import firmwareConnect from './img/lockbox/firmware-connect.png'
-import firmwareConnect2 from './img/lockbox/firmware-connect@2x.png'
-import firmwareConnect3 from './img/lockbox/firmware-connect@3x.png'
-import ledgerLogo from './img/lockbox/ledger.png'
-import ledgerLogo2 from './img/lockbox/ledger@2x.png'
-import ledgerLogo3 from './img/lockbox/ledger@3x.png'
-import ledgerLockbox from './img/lockbox/lockbox.png'
-import ledgerLockbox2 from './img/lockbox/lockbox@2x.png'
-import ledgerLockbox3 from './img/lockbox/lockbox@3x.png'
-import onboardComplete from './img/lockbox/onboarding_complete.gif'
-import onboardConnect from './img/lockbox/onboarding_connect.gif'
-import onboardCustomize from './img/lockbox/onboarding_customize.gif'
-import onboardPairDevice from './img/lockbox/onboarding_pairdevice.gif'
-import lockboxSuccess from './img/lockbox/send-confirmed.png'
-import lockboxSuccess2 from './img/lockbox/send-confirmed@2x.png'
-import lockboxSuccess3 from './img/lockbox/send-confirmed@3x.png'
-import sendConnect from './img/lockbox/send-connect.png'
-import sendConnect2 from './img/lockbox/send-connect@2x.png'
-import sendConnect3 from './img/lockbox/send-connect@3x.png'
-import sendReview from './img/lockbox/send-review.png'
-import sendReview2 from './img/lockbox/send-review@2x.png'
-import sendReview3 from './img/lockbox/send-review@3x.png'
-import logo96 from './img/logo-96.png'
-import logo144 from './img/logo-144.png'
-import logo192 from './img/logo-192.png'
-import logo512 from './img/logo-512.png'
+import latamSignupPhone from './img/latam-signup-phone.svg'
+import lockOpen from './img/lock-open.svg'
 import logoLoader from './img/logo-loader.gif'
 import mastercardLogo from './img/mastercard-logo.svg'
-import microDepositsWhole from './img/micro-deposits-whole.svg'
 import money from './img/money.png'
-import printer from './img/printer.svg'
+import nft from './img/nft.png'
+import nftcollections from './img/nfts/collections.png'
+import cryptoad2456 from './img/nfts/cryptoadz-2456.png'
+import cryptoad2794 from './img/nfts/cryptoadz-2794.png'
+import cryptoad2903 from './img/nfts/cryptoadz-2903.png'
+import cryptoad4502 from './img/nfts/cryptoadz-4502.png'
+import cryptoadlarge from './img/nfts/cryptoadz-large.png'
+import cryptoadsmall from './img/nfts/cryptoadz-small.png'
+import noActivity from './img/nfts/no-activity.svg'
+import nftnouns from './img/nfts/nouns.png'
+import nftpainthyperlink from './img/nfts/paint-hyperlink.png'
+import percentWhiteCircle from './img/percent-white-circle.svg'
+import percentBlueCircle from './img/percentage-blue-circle.svg'
+import productRedirectExchange from './img/product-redirect-exchange.png'
+import productRedirectWallet from './img/product-redirect-wallet.png'
 import proofOfAddress from './img/proof-of-address.svg'
-import qrCode from './img/qr-code.png'
-import recoverPadlock from './img/recover-padlock.svg'
-import recurringBuyBackground from './img/recurring-buy-background.png'
+import qrCode from './img/qr-code.svg'
 import recurringBuyGetStarted from './img/recurring-buys-get-started.svg'
 import refresh from './img/refresh.svg'
 import safeConnect from './img/safe-connect.svg'
 import search from './img/search.svg'
 import selectArrow from './img/select-arrow.png'
-import silverApproved from './img/silver-approved.svg'
+import sell from './img/sell.svg'
+import send from './img/send.svg'
+import sendCrypto from './img/send-crypto.svg'
 import smartphone from './img/smartphone.png'
 import sourceOfWealth from './img/source-of-wealth.svg'
-import starfieldBannerBg from './img/starfield-banner-bg.png'
-import swapCarousel1 from './img/swap-carousel1.png'
-import swapCarousel2 from './img/swap-carousel2.png'
-import swapCarousel3 from './img/swap-carousel3.png'
-import swapCarousel4 from './img/swap-carousel4.png'
-import swapCarousel5 from './img/swap-carousel5.png'
-import swapModalBg from './img/swap-modal-bg.svg'
+import ssBcLogo from './img/ss-bc-logo.svg'
+import subtractCheckCircle from './img/subtract-check-circle.png'
+import swap from './img/swap.svg'
+import swapBlue from './img/swap-blue.svg'
+import swapSuccess from './img/swap-success.svg'
+import swapWhite from './img/swap-white.svg'
 import tierGold from './img/tier-gold.svg'
-import tierSilver from './img/tier-silver.svg'
-import twitterWhite from './img/twitter-white.svg'
-import usFlag from './img/us-flag.svg'
-import usddIntro from './img/usdd-intro.svg'
+import userSuccess from './img/user-success.svg'
+import verifyNotice from './img/verify-notice.svg'
 import visaLogo from './img/visa-logo.svg'
-import visaNewLogo from './img/visa-new-logo.svg'
 import wallet from './img/wallet.svg'
-import walletBlue from './img/wallet-blue.svg'
+import walletGrayscale from './img/wallet-grayscale.svg'
+import walletNoBackground from './img/wallet-no-background.svg'
+import walletConnectCircleLogo from './img/walletconnect-logo-circle-blue.svg'
 import warningCircleFilled from './img/warning-circle-filled.png'
+import whiteVerified from './img/white-verified.svg'
+import withdrawBlueCircle from './img/withdraw-blue-circle.svg'
 import worldAlert from './img/world-alert.jpg'
 import worldAlert2 from './img/world-alert@2x.jpg'
 import worldAlert3 from './img/world-alert@3x.jpg'
@@ -158,22 +146,21 @@ import yodleeConnect from './img/yodlee-connect.svg'
 import yubikey from './img/yubikey.svg'
 
 const Images = {
-  ...coins,
-  'ad-bitcoin-games': adBitcoinGames,
-  'ad-bitcoin-games2': adBitcoinGames2,
+  ...fiatIcons,
   'airdrop-enrolled': airdropEnrolled,
   'airdrop-welcome': airdropWelcome,
   'airdrop-welcome-banner': airdropWelcomeBanner,
   'airdrop-welcome-banner2': airdropWelcomeBanner2,
   'airdrop-welcome2': airdropWelcome2,
   alert,
-  'allow-camera': allowCamera,
-  'allow-camera2': allowCamera2,
-  'allow-camera3': allowCamera3,
+  'alert-orange': alertOrange,
   'apple-app-store-badge': appleAppStoreBadge,
+  'apple-pay': applePay,
+  'arrow-left': arrowLeft,
   bank,
+  'bank-empty': bankEmpty,
+  'bank-empty-blue': bankEmptyBlue,
   'bank-error': bankError,
-  'bank-expired': bankExpired,
   'bank-logo-acorns': bankLogoAcorns,
   'bank-logo-ally': bankLogoAlly,
   'bank-logo-bank-of-america': bankLogoBankOfAmerica,
@@ -195,122 +182,111 @@ const Images = {
   'bank-logo-wells-fargo': bankLogoWellsFargo,
   'bank-rejected': bankRejected,
   'bank-success': bankSuccess,
+  'bar-chart': barChart,
   'bg-banner-pattern': bgBannerPattern,
   'bg-banner-pattern-lg': bgBannerPatternLg,
   'bg-pattern': bgPattern,
+  'bg-pattern-latam': bgPatternLatam,
   'bitpay-logo': bitpayLogo,
   'blank-card': blankCard,
+  'blockchain-gold': blockchainGold,
   'blockchain-icon': blockchainIcon,
   'blockchain-logo': blockchainLogo,
   'blockchain-logo-circle': blockchainLogoCircle,
-  'buy-sell-color': buySellColor,
-  'buy-sell-grey': buySellGrey,
+  'blockchain-silver': blockchainSilver,
+  'blue-verified': blueVerified,
+  'buy-blue-circle': buyBlueCircle,
   'buy-sell-learn-more': buySellLearnMore,
   'buy-sell-learn-more2': buySellLearnMore2,
   'buy-wallet': buyWallet,
+  'buy-white-circle': buyWhiteCircle,
+  'card-error-icon': cardErrorIcon,
+  'card-warning-icon': cardWarningIcon,
+  'cart-green': cartGreen,
   'chart-placeholder': chartPlaceholder,
-  'checkmark-green': checkmarkGreen,
+  'check-empty-blue': checkEmptyBlue,
+  'check-empty-white': checkEmptyWhite,
+  'checkmark-circle-green': checkmarkCircleGreen,
   'circle-empty': circleEmpty,
   'close-error': closeError,
   'cloud-check': cloudCheck,
-  'coin-pax': coinPax,
-  coins,
+  'credit-card': creditCard,
+  'credit-card-blue': creditCardBlue,
+  'cryptoad-2456': cryptoad2456,
+  'cryptoad-2794': cryptoad2794,
+  'cryptoad-2903': cryptoad2903,
+  'cryptoad-4502': cryptoad4502,
+  'cryptoad-large': cryptoadlarge,
+  'cryptoad-small': cryptoadsmall,
   'email-error': emailError,
   'email-success': emailSuccess,
+  'email-verified': emailVerified,
   'empty-search': emptySearch,
   'empty-tx': emptyTx,
-  'eth-airdrop': ethAirdrop,
-  'eth-airdrop2': ethAirdrop2,
   exchange,
-  'exchange-logo': exchangeLogo,
-  'facebook-white': facebookWhite,
-  'failed-kyc': failedKyc,
-  'failed-kyc2': failedKyc2,
-  'failed-kyc3': failedKyc3,
+  'exchange-grayscale': exchangeGrayscale,
+  'exchange-no-background': exchangeNoBackground,
   'file-delete': fileDelete,
   'file-download': fileDownload,
-  fintecture,
-  'firmware-connect': firmwareConnect,
-  'firmware-connect2': firmwareConnect2,
-  'firmware-connect3': firmwareConnect3,
-  'gold-approved': goldApproved,
+  globe,
   'gold-notice': goldNotice,
   'gold-verified': goldVerified,
   'google-authenticator': googleAuthenticator,
+  'google-pay': googlePay,
   'google-play-badge': googlePlayBadge,
-  'graph-recurring-buy-background': recurringBuyBackground,
+  'grey-verified': greyVerified,
+  identification,
   'identity-verification': identityVerification,
-  'intro-bank-gif': introBankGif,
-  'intro-cart-gif': introCartGif,
+  instagram,
+  interest,
+  'intro-card': introCard,
   'intro-hand': introHand,
-  'intro-lock': introLock,
-  'intro-receive-gif': introReceiveGif,
-  'intro-send': introSend,
-  'intro-send-gif': introSendGif,
-  'intro-swap': introSwap,
-  'intro-swap-gif': introSwapGif,
-  'ledger-lockbox': ledgerLockbox,
-  'ledger-lockbox2': ledgerLockbox2,
-  'ledger-lockbox3': ledgerLockbox3,
-  'ledger-logo': ledgerLogo,
-  'ledger-logo2': ledgerLogo2,
-  'ledger-logo3': ledgerLogo3,
-  'ledger-nano-s': deviceNanoS,
-  'linkedin-white': linkedinWhite,
-  'lockbox-device': deviceLockbox,
-  'lockbox-failed': lockboxFailed,
-  'lockbox-failed2': lockboxFailed2,
-  'lockbox-failed3': lockboxFailed3,
-  'lockbox-onboard-complete': onboardComplete,
-  'lockbox-onboard-connect': onboardConnect,
-  'lockbox-onboard-customize': onboardCustomize,
-  'lockbox-onboard-pairdevice': onboardPairDevice,
-  'lockbox-send-connect': sendConnect,
-  'lockbox-send-connect2': sendConnect2,
-  'lockbox-send-connect3': sendConnect3,
-  'lockbox-send-review': sendReview,
-  'lockbox-send-review2': sendReview2,
-  'lockbox-send-review3': sendReview3,
-  'lockbox-success': lockboxSuccess,
-  'lockbox-success2': lockboxSuccess2,
-  'lockbox-success3': lockboxSuccess3,
-  'logo-144': logo144,
-  'logo-192': logo192,
-  'logo-512': logo512,
-  'logo-96': logo96,
+  'latam-signup-phone': latamSignupPhone,
+  'lock-open': lockOpen,
   'logo-loader': logoLoader,
   'mastercard-logo': mastercardLogo,
-  'micro-deposits-whole': microDepositsWhole,
   money,
-  printer,
+  nft,
+  'nft-collections': nftcollections,
+  'nft-nouns': nftnouns,
+  'nft-paint-hyperlink': nftpainthyperlink,
+  'no-activity': noActivity,
+  'order-failed': orderFailed,
+  'order-my-card': orderMyCard,
+  'order-success': orderSuccess,
+  'percent-blue-circle': percentBlueCircle,
+  'percent-white-circle': percentWhiteCircle,
+  'product-redirect-exchange': productRedirectExchange,
+  'product-redirect-wallet': productRedirectWallet,
   'proof-of-address': proofOfAddress,
   'qr-code': qrCode,
-  'recover-padlock': recoverPadlock,
   'recurring-buy-get-started': recurringBuyGetStarted,
   refresh,
   'safe-connect': safeConnect,
   search,
   'select-arrow': selectArrow,
-  'silver-approved': silverApproved,
+  sell,
+  send,
+  'send-crypto': sendCrypto,
+  'sesocio-to-blockchain-logo': ssBcLogo,
   smartphone,
   'source-of-wealth': sourceOfWealth,
-  'starfield-banner-bg': starfieldBannerBg,
-  'swap-carousel1': swapCarousel1,
-  'swap-carousel2': swapCarousel2,
-  'swap-carousel3': swapCarousel3,
-  'swap-carousel4': swapCarousel4,
-  'swap-carousel5': swapCarousel5,
-  'swap-modal-bg': swapModalBg,
+  'subtract-check-circle': subtractCheckCircle,
+  swap,
+  'swap-blue': swapBlue,
+  'swap-success': swapSuccess,
+  'swap-white': swapWhite,
   'tier-gold': tierGold,
-  'tier-silver': tierSilver,
-  'twitter-white': twitterWhite,
-  'us-flag': usFlag,
-  'usdd-intro': usddIntro,
+  'user-success': userSuccess,
+  'verify-notice': verifyNotice,
   'visa-logo': visaLogo,
-  'visa-new-logo': visaNewLogo,
   wallet,
-  'wallet-blue': walletBlue,
+  'wallet-grayscale': walletGrayscale,
+  'wallet-no-background': walletNoBackground,
+  'walletconnect-circle-logo': walletConnectCircleLogo,
   'warning-circle-filled': warningCircleFilled,
+  'white-verified': whiteVerified,
+  'withdraw-blue-circle': withdrawBlueCircle,
   'world-alert': worldAlert,
   'world-alert2': worldAlert2,
   'world-alert3': worldAlert3,

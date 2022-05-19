@@ -3,15 +3,14 @@ import { connect } from 'react-redux'
 import { bindActionCreators, Dispatch } from 'redux'
 import { InjectedFormProps } from 'redux-form'
 
-import { Text } from 'blockchain-info-components'
 import { Remote } from '@core'
-import { Form } from 'components/Form'
-import { Wrapper } from 'components/Public'
+import Form from 'components/Form/Form'
 import { actions, selectors } from 'data'
 import { RootState } from 'data/rootReducer'
 import { RecoverSteps } from 'data/types'
 
 import { Props as OwnProps } from '..'
+import { FormWrapper } from '../model'
 import StepOne from './StepOne'
 import StepTwo from './StepTwo'
 
@@ -29,21 +28,23 @@ class ResetAccount extends React.PureComponent<InjectedFormProps<{}, Props> & Pr
 
   handleSubmit = (e) => {
     e.preventDefault()
-    const { authActions, cachedEmail, language, resetPassword } = this.props
-    authActions.resetAccount({ email: cachedEmail, language, password: resetPassword })
+    const { cachedEmail, formValues, language, signupActions } = this.props
+    signupActions.resetAccount({
+      email: cachedEmail,
+      language,
+      password: formValues.resetAccountPassword
+    })
   }
 
   render() {
     const isRegistering = Remote.Loading.is(this.props.registering)
     return (
-      <>
-        <Wrapper>
-          <Form onSubmit={this.handleSubmit}>
-            {this.state.step === 1 && <StepOne {...this.props} setFormStep={this.setFormStep} />}
-            {this.state.step === 2 && <StepTwo {...this.props} isRegistering={isRegistering} />}
-          </Form>
-        </Wrapper>
-      </>
+      <FormWrapper>
+        <Form onSubmit={this.handleSubmit}>
+          {this.state.step === 1 && <StepOne {...this.props} setFormStep={this.setFormStep} />}
+          {this.state.step === 2 && <StepTwo {...this.props} isRegistering={isRegistering} />}
+        </Form>
+      </FormWrapper>
     )
   }
 }
@@ -53,7 +54,7 @@ const mapStateToProps = (state: RootState) => ({
 })
 
 const mapDispatchToProps = (dispatch: Dispatch) => ({
-  authActions: bindActionCreators(actions.auth, dispatch)
+  signupActions: bindActionCreators(actions.signup, dispatch)
 })
 
 const connector = connect(mapStateToProps, mapDispatchToProps)

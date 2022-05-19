@@ -1,19 +1,31 @@
 /* stylelint-disable */
 
-import React, { Fragment } from 'react'
+import React from 'react'
 import { FormattedMessage } from 'react-intl'
+import { isValidNumber } from 'libphonenumber-js'
 import PropTypes from 'prop-types'
 import { Field, reduxForm } from 'redux-form'
 import styled from 'styled-components'
 
 import { Button, Link, Text } from 'blockchain-info-components'
-import { Form, PhoneNumberBox, TextBox } from 'components/Form'
-import { required, validMobileNumber } from 'services/forms'
+import Form from 'components/Form/Form'
+import PhoneNumberBox from 'components/Form/PhoneNumberBox'
+import TextBox from 'components/Form/TextBox'
+import { required } from 'services/forms'
+import { media } from 'services/styles'
+
+const validMobileNumber = (value) =>
+  isValidNumber(value) ? undefined : (
+    <FormattedMessage id='formhelper.invalidmobilenumber' defaultMessage='Invalid mobile number' />
+  )
 
 const AuthenticatorSummary = styled.div`
   width: 100%;
-  padding: 0px 20px;
-  opacity: ${props => (props.verified ? 0.3 : 1)};
+  padding: 0 20px;
+  ${media.mobile`
+    padding: 0;
+  `};
+  opacity: ${(props) => (props.verified ? 0.3 : 1)};
   @media (min-width: 992px) {
     width: 110%;
   }
@@ -37,17 +49,18 @@ const QRInputWrapper = styled.div`
   a {
     margin-top: 20px;
   }
+  ${media.mobile`
+    width: 55%;
+  `};
+`
+const StyledText = styled(Text)`
+  ${media.mobile`
+    padding-left: 20px;
+  `};
 `
 
-const SmsAuth = props => {
-  const {
-    changeMobileNumber,
-    code,
-    data,
-    handleSubmit,
-    invalid,
-    uiState
-  } = props
+const SmsAuth = (props) => {
+  const { changeMobileNumber, code, data, handleSubmit, invalid, uiState } = props
   const { countryCode, smsNumber, smsVerified } = data
 
   return (
@@ -55,13 +68,13 @@ const SmsAuth = props => {
       <AuthenticatorSummary verified={uiState.successToggled}>
         <SmsAuthContainer>
           {(!smsNumber && !smsVerified) || uiState.changeNumberToggled ? (
-            <Fragment>
-              <Text size='14px' weight={400}>
+            <>
+              <StyledText size='14px' weight={400}>
                 <FormattedMessage
                   id='scenes.security.twostepverification.sms.entermobile'
                   defaultMessage='Enter your mobile number and click Get Code. A verification code will be sent.'
                 />
-              </Text>
+              </StyledText>
               <QRInputWrapper>
                 <Field
                   name='mobileNumber'
@@ -75,9 +88,9 @@ const SmsAuth = props => {
                   Get Verification Code
                 </Button>
               </QRInputWrapper>
-            </Fragment>
+            </>
           ) : (
-            <Fragment>
+            <>
               <Text size='14px' weight={400}>
                 <FormattedMessage
                   id='scenes.security.twostepverification.sms.entercode'
@@ -85,11 +98,7 @@ const SmsAuth = props => {
                 />
               </Text>
               <QRInputWrapper>
-                <Field
-                  name='verificationCode'
-                  component={TextBox}
-                  validate={[required]}
-                />
+                <Field name='verificationCode' component={TextBox} validate={[required]} />
                 <Link weight={500} size='12px' onClick={changeMobileNumber}>
                   Change mobile number
                 </Link>
@@ -97,7 +106,7 @@ const SmsAuth = props => {
                   Submit Code
                 </Button>
               </QRInputWrapper>
-            </Fragment>
+            </>
           )}
         </SmsAuthContainer>
       </AuthenticatorSummary>
@@ -106,13 +115,12 @@ const SmsAuth = props => {
 }
 
 SmsAuth.propTypes = {
+  changeMobileNumber: PropTypes.func.isRequired,
   data: PropTypes.shape({
-    smsVerified: PropTypes.number,
     authType: PropTypes.number,
-    smsNumber: PropTypes.string
-  }),
-  onSubmit: PropTypes.func.isRequired,
-  changeMobileNumber: PropTypes.func.isRequired
+    smsNumber: PropTypes.string,
+    smsVerified: PropTypes.number
+  })
 }
 
 export default reduxForm({

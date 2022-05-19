@@ -3,13 +3,19 @@ import { FormattedMessage } from 'react-intl'
 import { connect, ConnectedProps } from 'react-redux'
 import styled from 'styled-components'
 
-import { CoinAccountIcon, Icon, SpinningLoader, Text } from 'blockchain-info-components'
 import { formatCoin } from '@core/exchange/utils'
-import { ExtractSuccess } from '@core/types'
+import { CrossBorderLimitsPayload, ExtractSuccess, WalletAccountEnum } from '@core/types'
+import { CoinAccountIcon, Icon, SpinningLoader, Text } from 'blockchain-info-components'
 import { FlyoutWrapper } from 'components/Flyout'
-import { selectors } from 'data'
+import { actions, selectors } from 'data'
 import { RootState } from 'data/rootReducer'
-import { InitSwapFormValuesType, SwapAccountType, SwapCoinType } from 'data/types'
+import {
+  Analytics,
+  InitSwapFormValuesType,
+  SwapAccountType,
+  SwapBaseCounterTypes,
+  SwapCoinType
+} from 'data/types'
 
 import { Props as BaseProps, SuccessStateType as SuccessType } from '..'
 import { BalanceRow, Border, Option, OptionTitle, OptionValue, TopText } from '../components'
@@ -53,6 +59,28 @@ const Toggler = styled.div`
 class EnterAmount extends PureComponent<Props> {
   componentDidMount() {
     this.props.swapActions.initAmountForm()
+
+    if (this.props?.initSwapFormValues?.BASE && this.props?.initSwapFormValues?.COUNTER) {
+      const { BASE, COUNTER } = this.props.initSwapFormValues
+
+      // fetch crossborder limits
+      const fromAccount =
+        BASE.type === SwapBaseCounterTypes.CUSTODIAL
+          ? WalletAccountEnum.CUSTODIAL
+          : WalletAccountEnum.NON_CUSTODIAL
+      const toAccount =
+        COUNTER.type === SwapBaseCounterTypes.CUSTODIAL
+          ? WalletAccountEnum.CUSTODIAL
+          : WalletAccountEnum.NON_CUSTODIAL
+      const inputCurrency = BASE.coin
+      const outputCurrency = COUNTER.coin
+      this.props.swapActions.fetchCrossBorderLimits({
+        fromAccount,
+        inputCurrency,
+        outputCurrency,
+        toAccount
+      } as CrossBorderLimitsPayload)
+    }
   }
 
   handleStepCoinSelection = (accounts: { [key in SwapCoinType]: Array<SwapAccountType> }) => {
@@ -82,6 +110,8 @@ class EnterAmount extends PureComponent<Props> {
 
     const { coinfig: baseCoinfig } = window.coins[BASE.coin]
     const { coinfig: counterCoinfig } = window.coins[COUNTER.coin]
+
+    const showSilverRevampBanner = this.props.products?.swap?.maxOrdersLeft > 0
 
     return (
       <>
@@ -189,7 +219,9 @@ class EnterAmount extends PureComponent<Props> {
                   <Border />
                 </Options>
                 <Checkout {...val} {...this.props} BASE={BASE} COUNTER={COUNTER} />
-                {userData.tiers.current === 1 && <Upgrade {...this.props} />}
+                {(showSilverRevampBanner || userData.tiers.current === 1) && (
+                  <Upgrade {...this.props} />
+                )}
               </>
             )
           })}
@@ -203,17 +235,44 @@ const mapStateToProps = (state: RootState) => {
   return {
     data: getData(state),
     initSwapFormValues: selectors.form.getFormValues('initSwap')(state) as InitSwapFormValuesType,
+    isPristine: selectors.form.isPristine('swapAmount')(state),
     quoteR: selectors.components.swap.getQuote(state)
   }
 }
 
-const connector = connect(mapStateToProps)
+const mapDispatchToProps = (dispatch) => ({
+  verifyIdentity: () => {
+    dispatch(
+      actions.components.identityVerification.verifyIdentity({
+        needMoreInfo: false,
+        origin: 'Swap',
+        tier: 2
+      })
+    )
+    dispatch(
+      actions.analytics.trackEvent({
+        key: Analytics.ONBOARDING_GET_MORE_ACCESS_WHEN_YOU_VERIFY,
+        properties: {
+          flow_step: 'SWAP'
+        }
+      })
+    )
+  }
+})
+
+const connector = connect(mapStateToProps, mapDispatchToProps)
 
 type OwnProps = BaseProps & { handleClose: () => void }
 export type Props = OwnProps & SuccessType & ConnectedProps<typeof connector>
 export type SuccessStateType = ExtractSuccess<ReturnType<typeof getData>> & {
   formErrors: {
-    amount?: 'ABOVE_MAX' | 'BELOW_MIN' | 'NEGATIVE_INCOMING_AMT' | boolean
+    amount?:
+      | 'ABOVE_MAX'
+      | 'BELOW_MIN'
+      | 'NEGATIVE_INCOMING_AMT'
+      | 'ABOVE_MAX_LIMIT'
+      | 'ABOVE_BALANCE'
+      | boolean
   }
 }
 

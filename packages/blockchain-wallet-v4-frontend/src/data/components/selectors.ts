@@ -1,13 +1,15 @@
 import * as bchTransactions from './bchTransactions/selectors'
 import * as brokerage from './brokerage/selectors'
 import * as btcTransactions from './btcTransactions/selectors'
+import * as buySell from './buySell/selectors'
+import * as debitCard from './debitCard/selectors'
 import * as fundRecovery from './fundRecovery/selectors'
 import * as identityVerification from './identityVerification/selectors'
 import * as interest from './interest/selectors'
 import * as interestUploadDocument from './interestUploadDocument/selectors'
 import * as layoutWallet from './layoutWallet/selectors'
-import * as lockbox from './lockbox/selectors'
 import * as manageAddresses from './manageAddresses/selectors'
+import * as nfts from './nfts/selectors'
 import * as priceChart from './priceChart/selectors'
 import * as priceTicker from './priceTicker/selectors'
 import * as recoveryPhrase from './recoveryPhrase/selectors'
@@ -22,24 +24,28 @@ import * as sendEth from './sendEth/selectors'
 import * as sendXlm from './sendXlm/selectors'
 import * as settings from './settings/selectors'
 import * as signMessage from './signMessage/selectors'
-import * as simpleBuy from './simpleBuy/selectors'
 import * as swap from './swap/selectors'
+import * as taxCenter from './taxCenter/selectors'
+import * as termsAndConditions from './termsAndConditions/selectors'
 import * as uploadDocuments from './uploadDocuments/selectors'
 import * as utils from './utils/selectors'
 import * as veriff from './veriff/selectors'
+import * as walletConnect from './walletConnect/selectors'
 import * as withdraw from './withdraw/selectors'
 
 export {
   bchTransactions,
   brokerage,
   btcTransactions,
+  buySell,
+  debitCard,
   fundRecovery,
   identityVerification,
   interest,
   interestUploadDocument,
   layoutWallet,
-  lockbox,
   manageAddresses,
+  nfts,
   priceChart,
   priceTicker,
   recoveryPhrase,
@@ -54,10 +60,12 @@ export {
   sendXlm,
   settings,
   signMessage,
-  simpleBuy,
   swap,
+  taxCenter,
+  termsAndConditions,
   uploadDocuments,
   utils,
   veriff,
+  walletConnect,
   withdraw
 }

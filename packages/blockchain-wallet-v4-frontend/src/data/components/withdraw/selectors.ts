@@ -18,6 +18,9 @@ export const getWithdrawal = (state: RootState) => state.components.withdraw.wit
 
 export const getFeesAndMinAmount = (state: RootState) => state.components.withdraw.feesAndMinAmount
 
+export const getCrossBorderLimits = (state: RootState) =>
+  state.components.withdraw.crossBorderLimits
+
 export const getFeeForCurrency = (state: RootState, currency: string) => {
   const feesR = getFeesAndMinAmount(state)
 
@@ -46,5 +49,5 @@ export const getLocks = (state: RootState) => state.components.withdraw.withdraw
 export const getWithdrawalLocks = (state: RootState) => {
   const locksR = getLocks(state)
 
-  return lift((locksResponse: ExtractSuccess<typeof locksR>) => locksResponse.locks)(locksR)
+  return lift((locksResponse: ExtractSuccess<typeof locksR>) => locksResponse)(locksR)
 }

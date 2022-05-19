@@ -1,4 +1,4 @@
-import { Moment } from 'moment'
+import { getUnixTime } from 'date-fns'
 
 import { CoinfigType, CoinType, FiatType } from '@core/types'
 
@@ -11,9 +11,19 @@ export default ({ apiUrl, get, post }) => {
       url: apiUrl
     })
 
-  const getPriceIndex = (base: CoinType, quote: FiatType, time: Moment): PriceIndexResponseType =>
+  const getErc20Assets = (): { currencies: CoinfigType[] } =>
     get({
-      data: { base, quote, time: time.unix() },
+      endPoint: '/assets/currencies/erc20',
+      url: apiUrl
+    })
+
+  const getPriceIndex = (
+    base: CoinType,
+    quote: FiatType,
+    time: number | string
+  ): PriceIndexResponseType =>
+    get({
+      data: { base, quote, time: getUnixTime(new Date(time)) },
       endPoint: '/price/index',
       url: apiUrl
     })
@@ -41,22 +51,24 @@ export default ({ apiUrl, get, post }) => {
       url: apiUrl
     })
 
-  const triggerWalletMagicLink = (email, captchaToken, sessionToken) => {
+  const triggerWalletMagicLink = (sessionToken, email, captchaToken, product, redirect) =>
     post({
       contentType: 'application/json',
       data: {
         captcha: captchaToken,
         email,
-        product: 'wallet',
+        product,
+        redirect_url: redirect,
         siteKey: window.CAPTCHA_KEY
       },
       endPoint: '/auth/email-reminder',
       sessionToken,
       url: apiUrl
     })
-  }
+
   return {
     getAssets,
+    getErc20Assets,
     getPriceIndex,
     getPriceIndexSeries,
     getPriceTimestampSeries,

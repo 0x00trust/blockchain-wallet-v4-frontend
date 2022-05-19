@@ -4,7 +4,7 @@ import styled from 'styled-components'
 
 import { IconButton } from 'blockchain-info-components'
 
-import { OwnProps, State } from '.'
+import { Props as OwnProps, State } from '.'
 
 interface CopyButtonProps {
   active: boolean
@@ -23,19 +23,18 @@ const CopyButton = styled(IconButton)<CopyButtonProps>`
     background: transparent;
   }
   > span {
-    margin-top: ${props => (props.active ? '-2px' : '-5px;')};
     margin-right: 0 !important;
-    font-size: ${props => (props.active ? '18px' : props.size || '20px')};
-    color: ${props =>
+    font-size: ${(props) => (props.active ? '18px' : props.size || '20px')};
+    color: ${(props) =>
       props.active
-        ? props.theme['success']
+        ? props.theme.success
         : props.color
         ? props.theme[props.color]
-        : props.theme.grey400};
+        : props.theme.grey400} !important;
   }
 `
 
-type CopyClipboardProps = OwnProps['alertActions'] &
+type CopyClipboardProps = OwnProps &
   State & {
     handleClick: () => void
   }

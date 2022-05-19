@@ -1,7 +1,10 @@
 import React, { forwardRef } from 'react'
 import { transparentize } from 'polished'
 import PropTypes from 'prop-types'
-import styled from 'styled-components'
+import styled, { css } from 'styled-components'
+
+const zInterval = 10
+const START_INTERVAL = 1040
 
 const ModalBackground = styled.div`
   position: absolute;
@@ -9,13 +12,22 @@ const ModalBackground = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  display: ${props => (props.isLast ? 'flex' : 'none')};
+  display: ${(props) => (props.isLast ? 'flex' : 'none')};
   flex-direction: row;
   justify-content: center;
   align-items: flex-start;
-  background-color: ${props =>
-    props.theme.black && transparentize(0.5, props.theme.black)};
-  z-index: 1040;
+  background-color: ${(props) =>
+    props.isLast && props.theme.black && transparentize(0.5, props.theme.black)};
+  z-index: ${START_INTERVAL};
+
+  ${(props) =>
+    props.doNotHide &&
+    css`
+      display: flex;
+      z-index: ${(props) => (props.zIndex ? props.zIndex : START_INTERVAL)};
+      background-color: ${(props) =>
+        props.isLast && props.theme.black ? transparentize(0.5, props.theme.black) : 'transparent'};
+    `}
 
   @media (min-width: 768px) {
     align-items: center;
@@ -30,23 +42,29 @@ const ModalBackground = styled.div`
 `
 
 const BaseModal = styled.div`
-  display: ${props => (props.isLast ? 'block' : 'none')};
+  display: ${(props) => (props.isLast ? 'block' : 'none')};
   position: relative;
   width: 100%;
-  z-index: ${props => (props.type === 'tray' ? 1039 : 1040)};
-  background-color: ${props => props.theme.white};
+  z-index: ${(props) => (props.type === 'tray' ? START_INTERVAL - 1 : START_INTERVAL)};
+  background-color: ${(props) => props.theme.white};
   box-shadow: none;
   border-radius: 8px;
 
+  ${(props) =>
+    props.doNotHide &&
+    css`
+      display: block;
+      z-index: ${(props) => (props.zIndex ? props.zIndex : START_INTERVAL)};
+    `}
+
   @media (min-width: 768px) {
-    width: ${props => props.width};
+    width: ${(props) => props.width};
     margin-top: initial;
-    box-shadow: 0 5px 15px
-      ${props => props.theme.black && transparentize(0.5, props.theme.black)};
+    box-shadow: 0 5px 15px ${(props) => props.theme.black && transparentize(0.5, props.theme.black)};
   }
 `
 
-const selectWidth = size => {
+const selectWidth = (size) => {
   switch (size) {
     case 'auto':
       return 'auto'
@@ -66,9 +84,9 @@ const selectWidth = size => {
 }
 
 const Modal = forwardRef((props, ref) => {
-  const { children, ...rest } = props
+  const { children, doNotHide, ...rest } = props
   const modalDataE2e = rest.dataE2e || 'modal'
-  const type = rest.type
+  const { type } = rest
   const size = rest.size || 'medium'
   const position = rest.position || 1
   const total = rest.total || 1
@@ -76,44 +94,51 @@ const Modal = forwardRef((props, ref) => {
   const width = selectWidth(size, position)
   const isLast = total === position
 
+  const zIndex = START_INTERVAL + zInterval * position
+
   if (type === 'tray') {
     return (
       <BaseModal
         data-e2e={modalDataE2e}
-        isLast={true}
+        isLast
         position={position}
         width={width}
+        zIndex={zIndex}
+        doNotHide={doNotHide}
         {...rest}
       >
         {children}
       </BaseModal>
     )
-  } else {
-    return (
-      <ModalBackground
+  }
+  return (
+    <ModalBackground
+      isLast={isLast}
+      position={position}
+      className={rest.class}
+      zIndex={zIndex}
+      doNotHide={doNotHide}
+    >
+      <BaseModal
+        data-e2e={modalDataE2e}
         isLast={isLast}
         position={position}
-        className={rest.class}
+        width={width}
+        ref={ref}
+        zIndex={zIndex}
+        doNotHide={doNotHide}
+        {...rest}
       >
-        <BaseModal
-          data-e2e={modalDataE2e}
-          isLast={isLast}
-          position={position}
-          width={width}
-          ref={ref}
-          {...rest}
-        >
-          {children}
-        </BaseModal>
-      </ModalBackground>
-    )
-  }
+        {children}
+      </BaseModal>
+    </ModalBackground>
+  )
 })
 
 Modal.propTypes = {
   position: PropTypes.number,
-  total: PropTypes.number,
-  size: PropTypes.oneOf(['xsmall', 'small', 'medium', 'large', 'xlarge', ''])
+  size: PropTypes.oneOf(['xsmall', 'small', 'medium', 'large', 'xlarge', '']),
+  total: PropTypes.number
 }
 
 export default Modal

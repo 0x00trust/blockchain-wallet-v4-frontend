@@ -1,5 +1,5 @@
-import { CoinType, SBOrderActionType, TimeRange } from '@core/types'
-import { SBFixType } from 'data/components/types'
+import { BSOrderActionType, CoinType, TimeRange } from '@core/types'
+import { BSFixType } from 'data/types'
 
 import * as AT from './actionTypes'
 
@@ -11,12 +11,11 @@ export type PriceChartPreferenceType = {
 // State
 export type PreferencesState = {
   coinDisplayed: boolean
-  culture: string
   language: string
   priceChart: PriceChartPreferenceType
   sbCheckout: {
-    [key in SBOrderActionType]: {
-      fix: SBFixType
+    [key in BSOrderActionType]: {
+      fix: BSFixType
     }
   }
   showAirdropClaimModal: boolean
@@ -24,25 +23,23 @@ export type PreferencesState = {
   showInterestInfoBox: boolean
   showKycCompleted: boolean
   showKycGetStarted: boolean
-  showLockboxSoftwareDownload: boolean
   showSwapBanner: boolean
   showSwapUpgradeModal: boolean
   showUpgradeForAirdropModal: boolean
   showUpgradeForStxAirdropModal: boolean
   theme: string
   totalBalancesDropdown: {
-    lockbox: boolean
     pending: boolean
     wallet: boolean
   }
 }
 
-interface SetSBCheckoutFixActionType {
+interface SetBSCheckoutFixActionType {
   payload: {
-    fix: SBFixType
-    orderType: SBOrderActionType
+    fix: BSFixType
+    orderType: BSOrderActionType
   }
-  type: typeof AT.SET_SB_CHECKOUT_FIX
+  type: typeof AT.SET_BS_CHECKOUT_FIX
 }
 
-export type PreferencesActionTypes = SetSBCheckoutFixActionType
+export type PreferencesActionTypes = SetBSCheckoutFixActionType

@@ -1,8 +1,8 @@
 import { lift } from 'ramda'
 
-import { getFiatBalance, getWithdrawableFiatBalance } from 'components/Balances/selectors'
 import { Remote } from '@core'
-import { ExtractSuccess, InvitationsType } from '@core/types'
+import { CrossBorderLimits, ExtractSuccess, InvitationsType } from '@core/types'
+import { getFiatBalance, getWithdrawableFiatBalance } from 'components/Balances/selectors'
 import { selectors } from 'data'
 import { RootState } from 'data/rootReducer'
 import { BankTransferAccountType } from 'data/types'
@@ -29,8 +29,8 @@ const getData = (state: RootState, ownProps: OwnProps) => {
     defaultMethodR = undefined
     bankTransferAccountsR = Remote.Success([])
   }
+  const paymentMethodsR = selectors.components.buySell.getBSPaymentMethods(state)
 
-  const formErrors = selectors.form.getFormSyncErrors('custodyWithdrawForm')(state)
   const userDataR = selectors.modules.profile.getUserData(state)
   const minAmountR = selectors.components.withdraw.getMinAmountForCurrency(
     state,
@@ -38,7 +38,11 @@ const getData = (state: RootState, ownProps: OwnProps) => {
   )
 
   const feesR = selectors.components.withdraw.getFeeForCurrency(state, ownProps.fiatCurrency)
-  const lockR = selectors.components.withdraw.getWithdrawalLocks(state)
+  const withdrawalLocksR = selectors.components.withdraw.getWithdrawalLocks(state)
+  const crossBorderLimits = selectors.components.withdraw
+    .getCrossBorderLimits(state)
+    .getOrElse({} as CrossBorderLimits)
+  const formErrors = selectors.form.getFormAsyncErrors('brokerageTx')(state)
 
   return lift(
     (
@@ -49,18 +53,21 @@ const getData = (state: RootState, ownProps: OwnProps) => {
       userData: ExtractSuccess<typeof userDataR>,
       minAmount: ExtractSuccess<typeof minAmountR>,
       fees: ExtractSuccess<typeof feesR>,
-      locks: ExtractSuccess<typeof lockR>
+      paymentMethods: ExtractSuccess<typeof paymentMethodsR>,
+      withdrawalLocks: ExtractSuccess<typeof withdrawalLocksR>
     ) => ({
       availableBalance,
       bankTransferAccounts,
+      crossBorderLimits,
       defaultBeneficiary,
       defaultMethod: defaultMethodR,
       fees,
       formErrors,
-      locks,
       minAmount,
+      paymentMethods,
       userData,
-      withdrawableBalance
+      withdrawableBalance,
+      withdrawalLocks
     })
   )(
     bankTransferAccountsR,
@@ -70,7 +77,8 @@ const getData = (state: RootState, ownProps: OwnProps) => {
     userDataR,
     minAmountR,
     feesR,
-    lockR
+    paymentMethodsR,
+    withdrawalLocksR
   )
 }
 

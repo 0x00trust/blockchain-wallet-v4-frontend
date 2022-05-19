@@ -30,9 +30,7 @@ class TradingLimits extends PureComponent<Props, State> {
     // fetch user details to obtain most recent state
     this.props.profileActions.fetchUserDataLoading()
     this.props.profileActions.fetchUser()
-    this.props.fetchProductsEligibility()
-    this.props.fetchInterestEDDStatus()
-    this.props.buySellActions.fetchSDDEligibility()
+    this.props.fetchLimitsAndDetails()
   }
 
   handleClose = () => {
@@ -68,13 +66,13 @@ class TradingLimits extends PureComponent<Props, State> {
 }
 
 const mapDispatchToProps = (dispatch: Dispatch) => ({
-  buySellActions: bindActionCreators(actions.components.buySell, dispatch),
-  fetchInterestEDDStatus: () => dispatch(actions.components.interest.fetchEDDStatus()),
-  fetchProductsEligibility: () => dispatch(actions.components.settings.fetchProductsEligibility()),
+  analyticsActions: bindActionCreators(actions.analytics, dispatch),
+  fetchLimitsAndDetails: () => dispatch(actions.components.settings.fetchLimitsAndDetails()),
   identityVerificationActions: bindActionCreators(
     actions.components.identityVerification,
     dispatch
   ),
+  modalActions: bindActionCreators(actions.modals, dispatch),
   profileActions: bindActionCreators(actions.modules.profile, dispatch)
 })
 

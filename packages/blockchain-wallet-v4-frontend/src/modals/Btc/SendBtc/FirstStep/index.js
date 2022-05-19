@@ -11,12 +11,11 @@ import Success from './template.success'
 
 class FirstStep extends React.Component {
   handleRefresh = () => {
-    const { amount, description, from, lockboxIndex, payPro, to } = this.props
+    const { amount, description, from, payPro, to } = this.props
     this.props.actions.initialized({
       amount,
       description,
       from,
-      lockboxIndex,
       payPro,
       to
     })
@@ -50,7 +49,15 @@ const mapStateToProps = (state) => ({
 
 const mapDispatchToProps = (dispatch) => ({
   actions: bindActionCreators(actions.components.sendBtc, dispatch),
-  formActions: bindActionCreators(actions.form, dispatch)
+  formActions: bindActionCreators(actions.form, dispatch),
+  verifyIdentity: () =>
+    dispatch(
+      actions.components.identityVerification.verifyIdentity({
+        needMoreInfo: false,
+        origin: 'Send',
+        tier: 2
+      })
+    )
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(FirstStep)

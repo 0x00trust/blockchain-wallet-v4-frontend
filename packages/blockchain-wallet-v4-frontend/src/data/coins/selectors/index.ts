@@ -1,7 +1,7 @@
 import { any, isEmpty, isNil, map, values } from 'ramda'
 
 import { Remote } from '@core'
-import { CoinfigType, CoinType, RemoteDataType } from '@core/types'
+import { CoinfigType, CoinType, InvitationsType, RemoteDataType } from '@core/types'
 import { selectors } from 'data'
 import { CoinAccountSelectorType } from 'data/coins/types'
 import { SwapAccountType } from 'data/components/swap/types'
@@ -14,6 +14,7 @@ import * as ERC20 from './coins/erc20'
 import * as ETH from './coins/eth'
 import * as EUR from './coins/eur'
 import * as GBP from './coins/gbp'
+import * as SELF_CUSTODY from './coins/self-custody'
 import * as USD from './coins/usd'
 import * as XLM from './coins/xlm'
 
@@ -26,16 +27,20 @@ const coinSelectors = {
   ETH,
   EUR,
   GBP,
+  SELF_CUSTODY,
   USD,
   XLM
 }
 
 export const getSelector = (coinfig: CoinfigType) => {
-  if (coinfig.type.erc20Address) {
+  if (selectors.core.data.coins.getErc20Coins().includes(coinfig.symbol)) {
     return 'ERC20'
   }
   if (selectors.core.data.coins.getCustodialCoins().includes(coinfig.symbol)) {
     return 'CUSTODIAL'
+  }
+  if (selectors.core.data.coins.getDynamicSelfCustodyCoins().includes(coinfig.symbol)) {
+    return 'SELF_CUSTODY'
   }
   return coinfig.symbol
 }
@@ -49,7 +54,7 @@ export const getIntroductionText = (coin: string) => {
 
 // retrieves custodial account balances
 export const getTradingBalance = (coin: CoinType, state) => {
-  return selectors.components.simpleBuy.getSBBalances(state).map((x) => x[coin])
+  return selectors.components.buySell.getBSBalances(state).map((x) => x[coin])
 }
 
 // retrieves custodial account balances
@@ -60,7 +65,7 @@ export const getInterestBalance = (coin: CoinType, state) => {
 // generic selector that should be used by all features to request their desired
 // account types for their coins
 export const getCoinAccounts = (state: RootState, ownProps: CoinAccountSelectorType) => {
-  const getCoinAccountsR = (state) => {
+  const getCoinAccountsR = (state: RootState) => {
     const coinList = ownProps?.coins
 
     // dynamically create account selectors via passed in coin list
@@ -82,7 +87,7 @@ export const getCoinAccounts = (state: RootState, ownProps: CoinAccountSelectorT
     return Remote.of(
       map(
         (coinAccounts: RemoteDataType<any, typeof accounts>) =>
-          (isEmpty(coinAccounts) && []) || coinAccounts.getOrElse([]),
+          (isEmpty(coinAccounts) && []) || (coinAccounts ? coinAccounts.getOrElse([]) : []),
         accounts
       ) as any
     )
@@ -91,7 +96,36 @@ export const getCoinAccounts = (state: RootState, ownProps: CoinAccountSelectorT
   const accountsR: RemoteDataType<any, { [key in CoinType]: Array<SwapAccountType> }> =
     getCoinAccountsR(state)
 
-  const accounts = accountsR.getOrElse({})
+  const accounts = accountsR?.getOrElse({}) || {}
 
   return accounts
+}
+
+export const getStxSelfCustodyAvailablity = (state): boolean => {
+  const isDoubleEncrypted = selectors.core.wallet.isSecondPasswordOn(state) as boolean
+  if (isDoubleEncrypted) return false
+
+  const featureFlagsR = selectors.core.walletOptions.getFeatureFlags(state)
+  const tagsR = selectors.modules.profile.getBlockstackTag(state)
+  const invitationsR = selectors.core.settings.getInvitations(state)
+
+  const featureFlags = featureFlagsR.getOrElse({
+    stxSelfCustodyEnableAirdrop: false,
+    stxSelfCustodyEnableAll: false
+  })
+  const tag = tagsR.getOrElse(false)
+  const invitations = invitationsR.getOrElse({ stxSelfCustody: true } as InvitationsType)
+
+  if (invitations.stxSelfCustody) {
+    if (tag && featureFlags.stxSelfCustodyEnableAirdrop) {
+      return true
+    }
+    if (featureFlags.stxSelfCustodyEnableAll) {
+      return true
+    }
+
+    return false
+  }
+
+  return false
 }

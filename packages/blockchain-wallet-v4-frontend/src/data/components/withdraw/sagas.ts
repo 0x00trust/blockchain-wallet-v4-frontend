@@ -1,18 +1,22 @@
-import { call, put } from 'redux-saga/effects'
+import { call, put, select, take } from 'redux-saga/effects'
 
 import { displayFiatToFiat } from '@core/exchange'
 import { APIType } from '@core/network/api'
-import { SBPaymentMethodType, SBPaymentTypes } from '@core/types'
+import { BSPaymentMethodType, BSPaymentTypes, FiatType } from '@core/types'
 import { errorHandler } from '@core/utils'
-import { actions } from 'data'
-import { WithdrawStepEnum } from 'data/types'
+import { actions, selectors } from 'data'
+import { ModalName, ProductEligibilityForUser, WithdrawStepEnum } from 'data/types'
 
+import { actions as custodialActions } from '../../custodial/slice'
+import profileSagas from '../../modules/profile/sagas'
 import { convertStandardToBase } from '../exchange/services'
-import * as A from './actions'
+import { actions as A } from './slice'
 
 const SERVICE_NAME = 'simplebuy'
 
-export default ({ api }: { api: APIType }) => {
+export default ({ api, coreSagas, networks }: { api: APIType; coreSagas; networks }) => {
+  const { isTier2 } = profileSagas({ api, coreSagas, networks })
+
   const handleWithdrawSubmit = function* ({ payload }: ReturnType<typeof A.handleCustodyWithdraw>) {
     const WITHDRAW_CONFIRM_FORM = 'confirmCustodyWithdraw'
 
@@ -43,16 +47,47 @@ export default ({ api }: { api: APIType }) => {
   const showModal = function* ({ payload }: ReturnType<typeof A.showModal>) {
     const { fiatCurrency } = payload
 
+    // get current user tier
+    const isUserTier2 = yield call(isTier2)
+
+    // check is user eligible to do withdrawal
+    // we skip this for gold users
+    if (!isUserTier2) {
+      yield put(actions.custodial.fetchProductEligibilityForUser())
+      yield take([
+        custodialActions.fetchProductEligibilityForUserSuccess.type,
+        custodialActions.fetchProductEligibilityForUserFailure.type
+      ])
+
+      const products = selectors.custodial.getProductEligibilityForUser(yield select()).getOrElse({
+        custodialWallets: { canWithdrawCrypto: false, canWithdrawFiat: false, enabled: false }
+      } as ProductEligibilityForUser)
+
+      const userCanWithdrawal =
+        products.custodialWallets?.canWithdrawCrypto && products.custodialWallets?.canWithdrawFiat
+      // prompt upgrade modal in case that user can't buy more
+      if (!userCanWithdrawal) {
+        yield put(
+          actions.modals.showModal(ModalName.UPGRADE_NOW_SILVER_MODAL, {
+            origin: 'WithdrawModal'
+          })
+        )
+        // close withdrawal Modal
+        yield put(actions.modals.closeModal(ModalName.CUSTODY_WITHDRAW_MODAL))
+        return
+      }
+    }
+
     yield put(
-      actions.modals.showModal('CUSTODY_WITHDRAW_MODAL', {
+      actions.modals.showModal(ModalName.CUSTODY_WITHDRAW_MODAL, {
         origin: 'TransactionList'
       })
     )
 
     yield put(A.setStep({ step: WithdrawStepEnum.LOADING }))
 
-    const paymentMethods: SBPaymentMethodType[] = yield call(
-      api.getSBPaymentMethods,
+    const paymentMethods: BSPaymentMethodType[] = yield call(
+      api.getBSPaymentMethods,
       fiatCurrency,
       true
     )
@@ -60,8 +95,8 @@ export default ({ api }: { api: APIType }) => {
     const eligibleMethods = paymentMethods.filter(
       (method) =>
         method.currency === fiatCurrency &&
-        (method.type === SBPaymentTypes.BANK_ACCOUNT ||
-          method.type === SBPaymentTypes.BANK_TRANSFER)
+        (method.type === BSPaymentTypes.BANK_ACCOUNT ||
+          method.type === BSPaymentTypes.BANK_TRANSFER)
     )
 
     if (eligibleMethods.length === 0) {
@@ -111,10 +146,16 @@ export default ({ api }: { api: APIType }) => {
     }
   }
 
-  const fetchWithdrawLocks = function* () {
+  const fetchWithdrawLocks = function* (action: ReturnType<typeof A.fetchWithdrawalLock>) {
     yield put(A.fetchWithdrawalFeesLoading())
+    const currency =
+      action.payload.currency ||
+      (selectors.components.withdraw.getFiatCurrency(yield select()) as FiatType)
     try {
-      const locks: ReturnType<typeof api.getWithdrawalLocks> = yield call(api.getWithdrawalLocks)
+      const locks: ReturnType<typeof api.getWithdrawalLocks> = yield call(
+        api.getWithdrawalLocks,
+        currency
+      )
       yield put(A.fetchWithdrawalLockSuccess(locks))
     } catch (e) {
       const error = errorHandler(e)
@@ -122,7 +163,28 @@ export default ({ api }: { api: APIType }) => {
     }
   }
 
+  const fetchCrossBorderLimits = function* ({
+    payload
+  }: ReturnType<typeof A.fetchCrossBorderLimits>) {
+    const { currency, fromAccount, inputCurrency, outputCurrency, toAccount } = payload
+    try {
+      yield put(A.fetchCrossBorderLimitsLoading())
+      const limitsResponse: ReturnType<typeof api.getCrossBorderTransactions> = yield call(
+        api.getCrossBorderTransactions,
+        inputCurrency,
+        fromAccount,
+        outputCurrency,
+        toAccount,
+        currency
+      )
+      yield put(A.fetchCrossBorderLimitsSuccess(limitsResponse))
+    } catch (e) {
+      yield put(A.fetchCrossBorderLimitsFailure(e))
+    }
+  }
+
   return {
+    fetchCrossBorderLimits,
     fetchFees,
     fetchWithdrawLocks,
     handleWithdrawMaxAmountClick,

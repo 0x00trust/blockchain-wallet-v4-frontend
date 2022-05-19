@@ -1,19 +1,33 @@
 /* eslint-disable no-param-reassign */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
+import { BuildTxFeeType, BuildTxResponseType } from '@core/network/api/coin/types'
 import Remote from '@core/remote'
 import {
+  CrossBorderLimits,
+  FiatCurrenciesType,
+  RatesType,
   // ProductTypes,
-  // SBTransactionType,
+  // BSTransactionType,
   WithdrawalLockResponseType,
   WithdrawalMinsAndFeesResponse,
   WithdrawResponseType
 } from '@core/types'
 
-import { SendCryptoState, SendCryptoStepPayload, SendCryptoStepType } from './types'
+import { SwapAccountType } from '../swap/types'
+import {
+  FetchSendLimitsPayload,
+  SendCryptoState,
+  SendCryptoStepPayload,
+  SendCryptoStepType
+} from './types'
 
 const initialState: SendCryptoState = {
   initialCoin: undefined,
+  isValidAddress: Remote.NotAsked,
+  prebuildTx: Remote.NotAsked,
+  sendLimits: Remote.NotAsked,
   step: SendCryptoStepType.COIN_SELECTION,
   transaction: Remote.NotAsked,
   withdrawLocks: Remote.NotAsked,
@@ -24,7 +38,38 @@ const sendCryptoSlice = createSlice({
   initialState,
   name: 'sendCrypto',
   reducers: {
-    fetchWithdrawalFees: () => {},
+    buildTx: (
+      state,
+      action: PayloadAction<{
+        account: SwapAccountType
+        baseCryptoAmt: string
+        destination: string
+        fee: BuildTxFeeType
+        fix: 'FIAT' | 'CRYPTO'
+        rates: RatesType
+        walletCurrency: keyof FiatCurrenciesType
+      }>
+    ) => {},
+    buildTxFailure: (state, action: PayloadAction<string>) => {
+      state.prebuildTx = Remote.Failure(action.payload)
+    },
+    buildTxLoading: (state) => {
+      state.prebuildTx = Remote.Loading
+    },
+    buildTxSuccess: (state, action: PayloadAction<BuildTxResponseType>) => {
+      state.prebuildTx = Remote.Success(action.payload)
+    },
+    fetchSendLimits: (state, action: PayloadAction<FetchSendLimitsPayload>) => {},
+    fetchSendLimitsFailure: (state, action: PayloadAction<string>) => {
+      state.sendLimits = Remote.Failure(action.payload)
+    },
+    fetchSendLimitsLoading: (state) => {
+      state.sendLimits = Remote.Loading
+    },
+    fetchSendLimitsSuccess: (state, action: PayloadAction<CrossBorderLimits>) => {
+      state.sendLimits = Remote.Success(action.payload)
+    },
+    fetchWithdrawalFees: (state, action: PayloadAction<{ account?: SwapAccountType }>) => {},
     fetchWithdrawalFeesFailure: (state, action: PayloadAction<string>) => {
       state.withdrawalFeesAndMins = Remote.Failure(action.payload)
     },
@@ -57,9 +102,23 @@ const sendCryptoSlice = createSlice({
     submitTransactionLoading: (state) => {
       state.transaction = Remote.Loading
     },
-    submitTransactionSuccess: (state, action: PayloadAction<WithdrawResponseType>) => {
+    submitTransactionSuccess: (
+      state,
+      action: PayloadAction<{ amount: { symbol: string; value: string } }>
+    ) => {
       state.transaction = Remote.Success(action.payload)
+    },
+    validateAddress: (state, action: PayloadAction<{ address: string; coin: string }>) => {},
+    validateAddressFailure: (state, action: PayloadAction<string>) => {
+      state.isValidAddress = Remote.Failure(action.payload)
+    },
+    validateAddressLoading: (state) => {
+      state.isValidAddress = Remote.Loading
+    },
+    validateAddressSuccess: (state, action: PayloadAction<boolean>) => {
+      state.isValidAddress = Remote.Success(action.payload)
     }
+
     // showModal: (state, action: PayloadAction<{ origin: ModalOriginType }>) => {}
   }
 })

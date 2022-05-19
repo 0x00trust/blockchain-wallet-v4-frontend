@@ -1,3 +1,4 @@
+import { createSelector } from '@reduxjs/toolkit'
 import {
   any,
   complement,
@@ -40,6 +41,7 @@ export const getTags = compose(lift(path(['tags'])), getUserData)
 export const getSunRiverTag = compose(lift(path(['tags', 'SUNRIVER'])), getUserData)
 export const getPowerPaxTag = compose(lift(hasPath(['tags', 'POWER_PAX'])), getUserData)
 export const getBlockstackTag = compose(lift(path(['tags', 'BLOCKSTACK'])), getUserData)
+export const isInternalTester = compose(lift(hasPath(['tags', 'INTERNAL_TESTING'])), getUserData)
 export const isUserCreated = compose(
   lift(equals(USER_ACTIVATION_STATES.CREATED)),
   getUserActivationState
@@ -62,7 +64,10 @@ export const isSilverOrAbove = compose(
 )
 
 export const getCurrentTier = compose(path(['data', 'current']), lift(path(['tiers'])), getUserData)
-
+export const getUserCurrencies = createSelector(getUserData, (userDataR) => {
+  const userData = userDataR.getOrElse({} as UserDataType)
+  return userData.currencies
+})
 export const getUserCountryCode = compose(lift(path(['address', 'country'])), getUserData)
 export const getUserStateCode = compose(lift(path(['address', 'state'])), getUserData)
 export const getUserTiers = compose(lift(prop('tiers')), getUserData)

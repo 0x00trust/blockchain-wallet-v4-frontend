@@ -13,7 +13,7 @@ import {
 
 import Settings from './Settings'
 
-const TwoStepVerificationRemember = props => {
+const TwoStepVerificationRemember = (props) => {
   const { authTypeNeverSave } = props
 
   return (
@@ -22,7 +22,7 @@ const TwoStepVerificationRemember = props => {
         <SettingHeader>
           <FormattedMessage
             id='scenes.securitysettings.basicsecurity.twostepverification.title'
-            defaultMessage='Remember Two-Step Verification'
+            defaultMessage='Remember Two-Factor Authentication'
           />
           <SettingStatus active={authTypeNeverSave === 0}>
             {authTypeNeverSave === 0 ? (

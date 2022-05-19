@@ -32,12 +32,14 @@ const selectColor = (nature, disabled) => {
     case 'white-transparent':
     case 'white-blue':
       return 'blue600'
+    case 'grey':
+      return 'grey600'
     default:
       return 'grey800'
   }
 }
 
-const IconButton = props => {
+const IconButton = (props) => {
   const { children, name, nature, ...rest } = props
   const color = selectColor(nature)
 

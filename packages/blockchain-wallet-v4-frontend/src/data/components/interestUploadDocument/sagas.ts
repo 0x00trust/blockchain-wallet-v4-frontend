@@ -1,4 +1,4 @@
-import { call, put, select } from 'redux-saga/effects'
+import { call, delay, put, select } from 'redux-saga/effects'
 
 import { APIType } from '@core/network/api'
 import { errorHandler } from '@core/utils'
@@ -44,20 +44,23 @@ export default ({ api }: { api: APIType }) => {
 
   const saveAdditionalData = function* () {
     try {
+      yield put(actions.form.startSubmit(INTEREST_UPLOAD_DOCUMENT))
       const formValues: InterestUploadDocumentFormValueTypes = yield select(
         selectors.form.getFormValues(INTEREST_UPLOAD_DOCUMENT)
       )
-      const saveDocumentsResponse: ReturnType<typeof api.storeEDDDocuments> = yield call(
-        api.storeEDDData,
-        formValues
+      yield call(api.storeEDDData, formValues)
+      yield put(actions.form.reset(INTEREST_UPLOAD_DOCUMENT))
+      yield put(actions.form.stopSubmit(INTEREST_UPLOAD_DOCUMENT))
+      yield put(
+        A.setStep({
+          step: InterestUploadDocumentsStepType.UPLOAD_AND_VERIFIED
+        })
       )
-      if (saveDocumentsResponse) {
-        actions.form.reset(INTEREST_UPLOAD_DOCUMENT)
-      }
     } catch (e) {
       const error = errorHandler(e)
       yield put(actions.logs.logErrorMessage(logLocation, 'save addtional documents', error))
       yield put(actions.alerts.displayError(C.SAVE_ADDITIONAL_DOCUMENTS_ERROR))
+      yield put(actions.form.stopSubmit(INTEREST_UPLOAD_DOCUMENT, { _error: error }))
     }
   }
 
@@ -70,10 +73,14 @@ export default ({ api }: { api: APIType }) => {
           step: InterestUploadDocumentsStepType.UPLOADED
         })
       )
+      // edd status should be changed at this point we have to fetch new one
+      yield put(actions.components.interest.fetchEDDStatus())
+      // close also interest modal
+      yield put(actions.modals.closeModal(ModalName.INTEREST_MODAL))
     } catch (e) {
       const error = errorHandler(e)
-      yield put(actions.logs.logErrorMessage(logLocation, 'save addtional documents', error))
-      yield put(actions.alerts.displayError(C.UPLOAD_ADDITIONAL_DOCUMNETS_FILES_ERROR))
+      yield put(actions.logs.logErrorMessage(logLocation, 'save additional documents', error))
+      yield put(actions.alerts.displayError(C.UPLOAD_ADDITIONAL_DOCUMENTS_FILES_ERROR))
     }
   }
 

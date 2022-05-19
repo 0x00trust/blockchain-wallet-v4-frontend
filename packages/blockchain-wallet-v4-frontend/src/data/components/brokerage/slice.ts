@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import { Remote } from '@core'
-import { WalletFiatType } from '@core/types'
+import { CrossBorderLimits, CrossBorderLimitsPayload, WalletFiatType } from '@core/types'
+import { PartialClientErrorProperties } from 'data/analytics/types/errors'
 import { ModalNameType } from 'data/modals/types'
 import { BankTransferAccountType } from 'data/types'
 
@@ -26,6 +28,7 @@ const initialState: BrokerageState = {
   bankCredentials: Remote.NotAsked,
   bankStatus: Remote.NotAsked,
   bankTransferAccounts: Remote.NotAsked,
+  crossBorderLimits: Remote.NotAsked,
   dwStep: BankDWStepType.DEPOSIT_METHODS,
   fastLink: Remote.NotAsked,
   fiatCurrency: undefined,
@@ -50,7 +53,10 @@ const brokerageSlice = createSlice({
       state.bankCredentials = Remote.Loading
     },
     fetchBankTransferAccounts: () => {},
-    fetchBankTransferAccountsError: (state, action: PayloadAction<string>) => {
+    fetchBankTransferAccountsError: (
+      state,
+      action: PayloadAction<PartialClientErrorProperties>
+    ) => {
       state.bankTransferAccounts = Remote.Failure(action.payload)
     },
     fetchBankTransferAccountsLoading: (state) => {
@@ -61,6 +67,19 @@ const brokerageSlice = createSlice({
       state.bankTransferAccounts = Remote.Success(accounts)
     },
     fetchBankTransferUpdate: (state, action: PayloadAction<YodleeAccountType | string>) => {},
+
+    // cross border limits
+    fetchCrossBorderLimits: (state, action: PayloadAction<CrossBorderLimitsPayload>) => {},
+    fetchCrossBorderLimitsFailure: (state, action: PayloadAction<string>) => {
+      state.crossBorderLimits = Remote.Failure(action.payload)
+    },
+    fetchCrossBorderLimitsLoading: (state) => {
+      state.crossBorderLimits = Remote.Loading
+    },
+    fetchCrossBorderLimitsSuccess: (state, action: PayloadAction<CrossBorderLimits>) => {
+      state.crossBorderLimits = Remote.Success(action.payload)
+    },
+
     handleDepositFiatClick: (state, action: PayloadAction<WalletFiatType>) => {
       state.fiatCurrency = action.payload
     },

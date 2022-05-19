@@ -5,7 +5,7 @@ import { prop } from 'ramda'
 import { Link, Text } from 'blockchain-info-components'
 import * as C from 'services/alerts'
 
-export const selectTitle = title => {
+export const selectTitle = (title) => {
   switch (title) {
     case C.BITPAY_CONFIRM_TITLE:
       return (
@@ -23,17 +23,7 @@ export const selectTitle = title => {
       )
     case C.PHONE_CALL_TITLE:
       return (
-        <FormattedMessage
-          id='modals.confirm.title.phone_call'
-          defaultMessage='Trade In Progress'
-        />
-      )
-    case C.CONFIRM_DELETE_LOCKBOX_TITLE:
-      return (
-        <FormattedMessage
-          id='modals.confirm.title.lockbox'
-          defaultMessage='Unpair Device'
-        />
+        <FormattedMessage id='modals.confirm.title.phone_call' defaultMessage='Trade In Progress' />
       )
     case C.ARCHIVE_VULNERABLE_ADDRESS_TITLE:
       return (
@@ -42,17 +32,8 @@ export const selectTitle = title => {
           defaultMessage='Archive Vulnerable Address'
         />
       )
-    case C.LOCKBOX_SOFTWARE_DOWNLOAD_TITLE:
-      return (
-        <FormattedMessage
-          id='modals.confirm.title.lockbox_software_download'
-          defaultMessage='Lockbox Software Download'
-        />
-      )
     default:
-      return (
-        <FormattedMessage id='modals.confirm.title' defaultMessage='Confirm' />
-      )
+      return <FormattedMessage id='modals.confirm.title' defaultMessage='Confirm' />
   }
 }
 
@@ -62,7 +43,7 @@ export const selectMessage = (message, values) => {
       return (
         <FormattedMessage
           id='modals.confirm.message.bitpay'
-          defaultMessage='Click OK to autopopulate your BitPay invoice payment information.'
+          defaultMessage='Click OK to auto-populate your BitPay invoice payment information.'
         />
       )
     case C.VERIFY_IDENTITY_MSG:
@@ -74,7 +55,7 @@ export const selectMessage = (message, values) => {
       )
     case C.PHONE_CALL_MSG:
       return (
-        <Fragment>
+        <>
           <Text size='18px'>
             <FormattedMessage
               id='modals.confirm.message.phone_call'
@@ -95,14 +76,7 @@ export const selectMessage = (message, values) => {
               values={values}
             />
           </Text>
-        </Fragment>
-      )
-    case C.CONFIRM_DELETE_LOCKBOX_MESSAGE:
-      return (
-        <FormattedMessage
-          id='modals.confirm.message.lockbox'
-          defaultMessage='Are you sure you want to unpair your device? You will lose all balance, transaction, and account data.'
-        />
+        </>
       )
     case C.ARCHIVE_VULNERABLE_ADDRESS_MSG:
       return (
@@ -112,57 +86,30 @@ export const selectMessage = (message, values) => {
           values={{
             addr: prop('vulnerableAddress', values),
             support: (
-              <Link
-                size='16px'
-                weight={500}
-                target='_blank'
-                href='https://support.blockchain.com'
-              >
+              <Link size='16px' weight={500} target='_blank' href='https://support.blockchain.com'>
                 support
               </Link>
             )
           }}
         />
       )
-    case C.LOCKBOX_SOFTWARE_DOWNLOAD_MSG:
-      return (
-        <FormattedMessage
-          id='modals.confirm.message.lockbox_software_download'
-          defaultMessage='The Lockbox software is now downloading. Once the download has finished, install and open the software, plug in your device and follow the in app instructions.'
-        />
-      )
     default:
-      return (
-        <FormattedMessage
-          id='modals.confirm.message'
-          defaultMessage='Please confirm.'
-        />
-      )
+      return <FormattedMessage id='modals.confirm.message' defaultMessage='Please confirm.' />
   }
 }
 
-export const selectCancel = message => {
+export const selectCancel = (message) => {
   switch (message) {
     case C.CANCEL_VERIFY_IDENTITY:
-      return (
-        <FormattedMessage
-          id='modals.confirm.cancel.verify_identity'
-          defaultMessage="I'll Do This Later"
-        />
-      )
+      return <FormattedMessage id='copy.ill_do_this_later' defaultMessage="I'll Do This Later" />
     case C.CANCEL_PHONE_CALL:
-      return (
-        <FormattedMessage
-          id='modals.confirm.cancel.phone_call'
-          defaultMessage='No, Thanks'
-        />
-      )
+      return <FormattedMessage id='modals.confirm.cancel.phone_call' defaultMessage='No, Thanks' />
     default:
       return <FormattedMessage id='buttons.cancel' defaultMessage='Cancel' />
   }
 }
 
-export const selectConfirm = message => {
+export const selectConfirm = (message) => {
   switch (message) {
     case C.CONFIRM_VERIFY_IDENTITY:
       return (
@@ -180,10 +127,7 @@ export const selectConfirm = message => {
       )
     case C.CONFIRM_PHONE_CALL:
       return (
-        <FormattedMessage
-          id='modals.confirm.confirm.phone_call'
-          defaultMessage='Give Me A Call'
-        />
+        <FormattedMessage id='modals.confirm.confirm.phone_call' defaultMessage='Give Me A Call' />
       )
     default:
       return <FormattedMessage id='modals.confirm.button' defaultMessage='OK' />

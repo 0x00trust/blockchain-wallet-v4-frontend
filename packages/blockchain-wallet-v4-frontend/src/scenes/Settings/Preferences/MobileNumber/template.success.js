@@ -12,7 +12,7 @@ import {
 
 import Settings from './Settings'
 
-const MobileNumber = props => {
+const MobileNumber = (props) => {
   const { data } = props
   const { authType, smsNumber, smsVerified } = data
   const isVerified = smsVerified === 1
@@ -22,18 +22,18 @@ const MobileNumber = props => {
       <SettingSummary>
         <SettingHeader>
           <FormattedMessage
-            id='scenes.settings.preferences.mobile.success.title'
+            id='scenes.settings.preferences.mobile.title'
             defaultMessage='Mobile Number'
           />
           <SettingStatus active={isVerified}>
             {isVerified ? (
               <FormattedMessage
-                id='scenes.settings.preferences.mobile.success.verified'
+                id='scenes.settings.preferences.mobile.verified'
                 defaultMessage='Verified'
               />
             ) : (
               <FormattedMessage
-                id='scenes.settings.preferences.mobile.success.unverified'
+                id='scenes.settings.preferences.mobile.unverified'
                 defaultMessage='Unverified'
               />
             )}
@@ -41,25 +41,21 @@ const MobileNumber = props => {
         </SettingHeader>
         <SettingDescription>
           <FormattedMessage
-            id='scenes.settings.preferences.mobile.success.description1'
+            id='scenes.settings.preferences.mobile.description1'
             defaultMessage='Your mobile phone can be used to enable two-factor authentication,'
           />
           <FormattedMessage
-            id='scenes.settings.preferences.mobile.success.description2'
+            id='scenes.settings.preferences.mobile.description2'
             defaultMessage='helping to secure your wallet from unauthorized access,'
           />
           <FormattedMessage
-            id='scenes.settings.preferences.mobile.success.description3'
+            id='scenes.settings.preferences.mobile.description3'
             defaultMessage='and to send bitcoin payment alerts when you receive funds.'
           />
         </SettingDescription>
       </SettingSummary>
       <SettingComponent>
-        <Settings
-          smsNumber={smsNumber}
-          smsVerified={smsVerified}
-          authType={authType}
-        />
+        <Settings smsNumber={smsNumber} smsVerified={smsVerified} authType={authType} />
       </SettingComponent>
     </SettingContainer>
   )

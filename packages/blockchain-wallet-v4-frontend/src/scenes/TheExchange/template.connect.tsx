@@ -41,7 +41,7 @@ const ExchangeConnect = (props: Props) => (
       <Text size='20px' weight={600} color='grey800'>
         <FormattedMessage
           id='scenes.exchange.empty.walletconnect.header'
-          defaultMessage='Wallet Connect'
+          defaultMessage='Exchange Link'
         />
       </Text>
       <Text size='14px' weight={500} color='grey600' lineHeight='20px'>
@@ -68,10 +68,7 @@ const ExchangeConnect = (props: Props) => (
               fullwidth
               onClick={props.profileActions.shareWalletAddressesWithExchange}
             >
-              <FormattedMessage
-                id='scenes.exchange.reconnectnow'
-                defaultMessage='Reconnect Now'
-              />
+              <FormattedMessage id='scenes.exchange.reconnectnow' defaultMessage='Reconnect Now' />
             </Button>
           ) : (
             <LinkToExchange {...props} />
@@ -90,6 +87,7 @@ const ExchangeConnect = (props: Props) => (
             nature='primary'
             height='48px'
             fullwidth
+            onClick={props.onSignup}
           >
             <FormattedMessage id='scenes.exchange.connectnow' defaultMessage='Connect Now' />
           </Button>

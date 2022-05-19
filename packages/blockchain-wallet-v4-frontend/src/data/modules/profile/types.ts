@@ -1,7 +1,8 @@
 import { AxiosError } from 'axios'
 
-import { NabuAddressType, NabuApiErrorType, RemoteDataType } from '@core/types'
-import { CampaignsType } from 'data/types'
+import { Exchange } from '@core'
+import type { NabuAddressType, NabuApiErrorType, RemoteDataType, WalletFiatType } from '@core/types'
+import type { CampaignsType } from 'data/components/identityVerification/types'
 
 import * as AT from './actionTypes'
 
@@ -23,6 +24,12 @@ export type CampaignInfoType = {
   updatedAt: string
   userCampaignState?: UserCampaignState
   userCampaignTransactionResponseList: Array<UserCampaignTransactionResponseType>
+}
+
+export enum ExchangeAuthOriginType {
+  Login = 'login',
+  SideMenu = 'sideMenu',
+  Signup = 'signup'
 }
 
 export type KycStateType = 'NONE' | 'PENDING' | 'UNDER_REVIEW' | 'REJECTED' | 'VERIFIED' | 'EXPIRED'
@@ -82,8 +89,15 @@ export type Tiers = {
   selected: 0 | 1 | 2 | 3
 }
 
+export type UserTradingCurencies = {
+  defaultWalletCurrency: WalletFiatType
+  preferredFiatTradingCurrency: WalletFiatType
+  usableFiatCurrencies: WalletFiatType[]
+}
+
 export type UserDataType = {
   address?: NabuAddressType
+  currencies: UserTradingCurencies
   dob: string
   email: string
   emailVerified: boolean
@@ -138,6 +152,7 @@ export interface ProfileState {
 
 // Actions
 // Keep these sorted alphabetically
+
 interface FetchTiersFailureAction {
   // FIXME: TypeScript error: Error?
   payload: {
@@ -190,6 +205,13 @@ interface FetchUserDataSuccessAction {
     userData: UserDataType
   }
   type: typeof AT.FETCH_USER_DATA_SUCCESS
+}
+
+interface AuthAndRouteToExchangeAction {
+  payload: {
+    origin: ExchangeAuthOriginType
+  }
+  type: typeof AT.AUTH_AND_ROUTE_TO_EXCHANGE
 }
 interface LinkFromExchangeAccountAction {
   payload: {
@@ -290,6 +312,7 @@ interface ShareWalletAddressWithExchangeSuccessAction {
 }
 
 export type ProfileActionTypes =
+  | AuthAndRouteToExchangeAction
   | FetchTiersFailureAction
   | FetchTiersLoadingAction
   | FetchTiersSuccessAction

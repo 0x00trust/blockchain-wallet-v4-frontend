@@ -4,25 +4,31 @@ import { bindActionCreators, Dispatch } from 'redux'
 
 import { Remote } from '@core'
 import { BeneficiaryType, ExtractSuccess, WalletFiatType } from '@core/types'
+import { FlyoutOopsError } from 'components/Flyout/Errors'
 import { actions } from 'data'
 import { RootState } from 'data/rootReducer'
 
 import Loading from '../EnterAmount/template.loading'
 import getData from './selectors'
-import Failure from './template.failure'
 import Success from './template.success'
 
 class BankPicker extends PureComponent<Props> {
   componentDidMount() {
     if (!Remote.Success.is(this.props.data)) {
-      this.props.custodialActions.fetchCustodialBeneficiaries(this.props.fiatCurrency)
+      this.props.custodialActions.fetchCustodialBeneficiaries({ currency: this.props.fiatCurrency })
       this.props.brokerageActions.fetchBankTransferAccounts()
     }
   }
 
   render() {
     return this.props.data.cata({
-      Failure: () => <Failure {...this.props} handleClose={this.props.handleClose} />,
+      Failure: () => (
+        <FlyoutOopsError
+          action='close'
+          data-e2e='withdrawReload'
+          handler={this.props.handleClose}
+        />
+      ),
       Loading: () => <Loading />,
       NotAsked: () => <Loading />,
       Success: (val) => <Success {...this.props} {...val} />

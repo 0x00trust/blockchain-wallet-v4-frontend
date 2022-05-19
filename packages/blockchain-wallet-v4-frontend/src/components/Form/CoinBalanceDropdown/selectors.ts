@@ -1,5 +1,6 @@
 import { lift } from 'ramda'
 
+import { Remote } from '@core'
 import { getData as getBchAddressData } from 'components/Form/SelectBoxBchAddresses/selectors'
 import { getData as getBtcAddressData } from 'components/Form/SelectBoxBtcAddresses/selectors'
 import { getData as getCoinAddressData } from 'components/Form/SelectBoxCoinAddresses/selectors'
@@ -8,7 +9,6 @@ import {
   getEthData as getEthAddressData
 } from 'components/Form/SelectBoxEthAddresses/selectors'
 import { getData as getXlmAddressData } from 'components/Form/SelectBoxXlmAddresses/selectors'
-import { Remote } from '@core'
 import { selectors } from 'data'
 
 import { OwnProps } from '.'
@@ -22,7 +22,6 @@ const getData = (state, ownProps: OwnProps) => {
     case 'BCH':
       addressDataR = getBchAddressData(state, {
         excludeImported: true,
-        excludeLockbox: true,
         includeAll: false,
         includeCustodial,
         includeInterest: false
@@ -31,7 +30,6 @@ const getData = (state, ownProps: OwnProps) => {
     case 'BTC':
       addressDataR = getBtcAddressData(state, {
         excludeImported: true,
-        excludeLockbox: true,
         includeAll: false,
         includeCustodial,
         includeInterest: false
@@ -39,21 +37,19 @@ const getData = (state, ownProps: OwnProps) => {
       break
     case 'ETH':
       addressDataR = getEthAddressData(state, {
-        excludeLockbox: true,
         includeCustodial,
         includeInterest: false
       })
       break
     case 'XLM':
       addressDataR = getXlmAddressData(state, {
-        excludeLockbox: true,
         includeCustodial,
         includeInterest: false
       })
       break
     default:
       switch (true) {
-        case selectors.core.data.eth.getErc20Coins().includes(coin):
+        case selectors.core.data.coins.getErc20Coins().includes(coin):
           addressDataR = getErc20AddressData(state, {
             coin,
             includeCustodial,

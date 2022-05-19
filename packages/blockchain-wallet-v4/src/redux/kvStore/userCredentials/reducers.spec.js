@@ -13,7 +13,7 @@ describe('kvStore userCredentials reducers', () => {
   const user_id = '3d448ad7-0e2c-4b65-91b0-c149892e243c'
   const lifetime_token = 'd753109e-23jd-42bd-82f1-cc904702asdfkjf'
 
-  const userCredentialsObject = { user_id, lifetime_token }
+  const userCredentialsObject = { lifetime_token, user_id }
 
   const userCredentialsMetadata = set(
     KVStoreEntry.value,
@@ -29,46 +29,37 @@ describe('kvStore userCredentials reducers', () => {
 
   it('should handle FETCH_METADATA_USER_CREDENTIALS_LOADING', () => {
     const action = actions.fetchMetadataUserCredentialsLoading()
-    const expectedState = Remote.Loading
-    expect(reducer(undefined, action)).toEqual(expectedState)
+    expect(reducer(undefined, action)).toEqual(Remote.Loading)
   })
 
   it('should handle FETCH_METADATA_USER_CREDENTIALS_FAILURE', () => {
     const error = 'Cannot load userCredentials metadata'
     const action = actions.fetchMetadataUserCredentialsFailure(error)
-    const expectedState = Remote.Failure(error)
-    expect(reducer(undefined, action)).toEqual(expectedState)
+    expect(reducer(undefined, action)).toEqual(Remote.Failure(error))
   })
 
   it('should handle FETCH_METADATA_USER_CREDENTIALS_SUCCESS', () => {
-    const action = actions.fetchMetadataUserCredentialsSuccess(
-      userCredentialsMetadata
-    )
-    const expectedState = userCredentialsMetadataSuccess
-    expect(reducer(undefined, action)).toEqual(expectedState)
+    const action = actions.fetchMetadataUserCredentialsSuccess(userCredentialsMetadata)
+    expect(reducer(undefined, action)).toEqual(userCredentialsMetadataSuccess)
   })
 
   it('should handle CREATE_METADATA_USER_CREDENTIALS', () => {
-    const action = actions.createMetadataUserCredentials(
-      userCredentialsMetadata
-    )
-    const expectedState = userCredentialsMetadataSuccess
-    expect(reducer(undefined, action)).toEqual(expectedState)
+    const action = actions.createMetadataUserCredentials(userCredentialsMetadata)
+    expect(reducer(undefined, action)).toEqual(userCredentialsMetadataSuccess)
   })
 
   it('should handle SET_USER_CREDENTIALS', () => {
     const newUserId = '3d448ad7-0e2c-4b65-91b0-c149892e243d'
     const newToken = 'd753109e-23jd-42bd-82f1-cc904702asdfkje'
     const action = actions.setUserCredentials(newUserId, newToken)
-    const expectedState = Remote.Success(
-      set(
-        KVStoreEntry.value,
-        { lifetime_token: newToken, user_id: newUserId },
-        KVStoreEntry.createEmpty(typeId)
-      )
-    )
     expect(reducer(userCredentialsMetadataSuccess, action)).toEqual(
-      expectedState
+      Remote.Success(
+        set(
+          KVStoreEntry.value,
+          { lifetime_token: newToken, user_id: newUserId },
+          KVStoreEntry.createEmpty(typeId)
+        )
+      )
     )
   })
 })

@@ -4,10 +4,10 @@ import { bindActionCreators, Dispatch } from 'redux'
 
 import { Remote } from '@core'
 import { WalletFiatType } from '@core/types'
+import { FlyoutOopsError } from 'components/Flyout/Errors'
 import { actions } from 'data'
 import { RootState } from 'data/rootReducer'
 
-import Failure from '../template.failure'
 import Loading from '../template.loading'
 import { getData } from './selectors'
 import Success from './template.success'
@@ -16,13 +16,15 @@ const BankList = (props: Props) => {
   useEffect(() => {
     if (props.fiatCurrency && !Remote.Success.is(props.data)) {
       props.brokerageActions.fetchBankTransferAccounts()
-      props.withdrawActions.fetchWithdrawalFees('ALL')
+      props.withdrawActions.fetchWithdrawalFees({ paymentMethod: 'ALL' })
     }
-    props.custodialActions.fetchCustodialBeneficiaries(props.fiatCurrency)
+    props.custodialActions.fetchCustodialBeneficiaries({ currency: props.fiatCurrency })
   }, [])
 
   return props.data.cata({
-    Failure: () => <Failure {...props} handleClose={props.handleClose} />,
+    Failure: () => (
+      <FlyoutOopsError action='close' data-e2e='depositTryAgain' handler={props.handleClose} />
+    ),
     Loading: () => <Loading />,
     NotAsked: () => <Loading />,
     Success: (val) => <Success {...val} {...props} />

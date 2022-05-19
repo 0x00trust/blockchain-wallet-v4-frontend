@@ -3,8 +3,8 @@ import { takeLatest } from 'redux-saga/effects'
 import sagas from './sagas'
 import { actions } from './slice'
 
-export default ({ api }) => {
-  const brokerageSagas = sagas({ api })
+export default ({ api, coreSagas, networks }) => {
+  const brokerageSagas = sagas({ api, coreSagas, networks })
 
   return function* brokerageSaga() {
     yield takeLatest(
@@ -18,5 +18,6 @@ export default ({ api }) => {
     yield takeLatest(actions.deleteSavedBank.type, brokerageSagas.deleteSavedBank)
     yield takeLatest(actions.fetchBankLinkCredentials.type, brokerageSagas.fetchBankLinkCredentials)
     yield takeLatest(actions.showModal.type, brokerageSagas.showModal)
+    yield takeLatest(actions.fetchCrossBorderLimits.type, brokerageSagas.fetchCrossBorderLimits)
   }
 }

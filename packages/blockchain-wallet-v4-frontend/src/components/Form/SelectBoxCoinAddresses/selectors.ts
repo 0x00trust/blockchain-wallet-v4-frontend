@@ -2,7 +2,9 @@
 import { concat, curry, reduce, sequence } from 'ramda'
 
 import { Exchange, Remote } from '@core'
+import { getBalance } from '@core/redux/data/coins/selectors'
 import { ADDRESS_TYPES } from '@core/redux/payment/btc/utils'
+import { InterestAccountBalanceType } from '@core/types'
 import { selectors } from 'data'
 
 export const getData = (
@@ -12,9 +14,17 @@ export const getData = (
     exclude?: Array<string>
     includeCustodial?: boolean
     includeExchangeAddress?: boolean
+    includeInterest?: boolean
+    includeSelfCustody?: boolean
   }
 ) => {
-  const { /* exclude = [], */ coin, includeCustodial, includeExchangeAddress } = ownProps
+  const {
+    /* exclude = [], */ coin,
+    includeCustodial,
+    includeExchangeAddress,
+    includeInterest,
+    includeSelfCustody
+  } = ownProps
 
   const buildCustodialDisplay = (x) => {
     return (
@@ -22,6 +32,26 @@ export const getData = (
       ` (${Exchange.displayCoinToCoin({
         coin,
         value: x ? x.available : 0
+      })})`
+    )
+  }
+
+  const buildSelfCustodyDisplay = (x) => {
+    return (
+      `Private Key` +
+      ` (${Exchange.displayCoinToCoin({
+        coin,
+        value: x || 0
+      })})`
+    )
+  }
+
+  const buildInterestDisplay = (account: InterestAccountBalanceType[string]) => {
+    return (
+      `Rewards Account` +
+      ` (${Exchange.displayCoinToCoin({
+        coin,
+        value: account ? account.balance : 0
       })})`
     )
   }
@@ -39,6 +69,25 @@ export const getData = (
       }
     }
   ]
+  const toSelfCustodyDropdown = (balance) => [
+    {
+      label: buildSelfCustodyDisplay(balance),
+      value: { balance, label: 'Private Key', type: ADDRESS_TYPES.ACCOUNT }
+    }
+  ]
+  const toInterestDropdown = (account) =>
+    account
+      ? [
+          {
+            label: buildInterestDisplay(account),
+            value: {
+              ...account,
+              label: 'Rewards Account',
+              type: ADDRESS_TYPES.INTEREST
+            }
+          }
+        ]
+      : []
 
   const exchangeAddress = selectors.components.send.getPaymentsAccountExchange(coin, state)
   const hasExchangeAddress = Remote.Success.is(exchangeAddress)
@@ -48,14 +97,24 @@ export const getData = (
       ? exchangeAddress.map(toExchange).map(toGroup('Exchange'))
       : Remote.of([]),
     includeCustodial
-      ? selectors.components.simpleBuy
-          .getSBBalances(state)
+      ? selectors.components.buySell
+          .getBSBalances(state)
           .map((x) => x[coin])
           .map(toCustodialDropdown)
           .map(toGroup('Custodial Wallet'))
+      : Remote.of([]),
+    includeSelfCustody
+      ? getBalance(coin, state).map(toSelfCustodyDropdown).map(toGroup('Private Key'))
+      : Remote.of([]),
+    includeInterest
+      ? selectors.components.interest
+          .getInterestAccountBalance(state)
+          .map((x) => x[coin])
+          .map(toInterestDropdown)
+          .map(toGroup('Rewards Account'))
       : Remote.of([])
-  ]).map(([b1, b2]) => ({
+  ]).map(([b1, b2, b3, b4]) => ({
     // @ts-ignore
-    data: reduce(concat, [], [b1, b2])
+    data: reduce(concat, [], [b1, b2, b3, b4])
   }))
 }

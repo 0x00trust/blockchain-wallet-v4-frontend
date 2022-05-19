@@ -1,16 +1,22 @@
 import React, { SyntheticEvent } from 'react'
 import { FormattedMessage } from 'react-intl'
+import {
+  CARD_TYPES,
+  DEFAULT_CARD_SVG_LOGO
+} from 'blockchain-wallet-v4-frontend/src/modals/BuySell/PaymentMethods/model'
 import { InjectedFormProps, reduxForm } from 'redux-form'
 import styled from 'styled-components'
 
+import { BSPaymentTypes, FiatType } from '@core/types'
 import { Box, Button, Text } from 'blockchain-info-components'
-import { FiatType, SBPaymentTypes } from '@core/types'
-import { CARD_TYPES, DEFAULT_CARD_SVG_LOGO } from 'components/Form/CreditCardBox/model'
 import { SettingComponent, SettingContainer, SettingSummary } from 'components/Setting'
+import { model } from 'data'
 import { media } from 'services/styles'
 
 import { CardDetails, Child, CustomSettingHeader, RemoveButton } from '../styles'
 import { Props as OwnProps, SuccessStateType } from '.'
+
+const { FORM_BS_CHECKOUT_CONFIRM } = model.components.buySell
 
 const CustomSettingContainer = styled(SettingContainer)`
   ${media.atLeastLaptopL`
@@ -41,7 +47,7 @@ const Success: React.FC<
   InjectedFormProps<{}, Props & { fiatCurrency?: FiatType }> & Props & { fiatCurrency?: FiatType }
 > = (props) => {
   const ccPaymentMethod = props.paymentMethods.methods.find(
-    (m) => m.type === SBPaymentTypes.PAYMENT_CARD
+    (m) => m.type === BSPaymentTypes.PAYMENT_CARD
   )
   const activeCards = props.cards.filter((card) => card.state === 'ACTIVE')
 
@@ -127,4 +133,4 @@ type Props = OwnProps &
     handleCreditCardClick: () => void
   }
 
-export default reduxForm<{}, Props>({ form: 'linkedCards' })(Success)
+export default reduxForm<{}, Props>({ form: FORM_BS_CHECKOUT_CONFIRM })(Success)

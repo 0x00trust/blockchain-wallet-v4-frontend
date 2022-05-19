@@ -1,26 +1,25 @@
 import BigNumber from 'bignumber.js'
-import moment from 'moment'
+import { differenceInMilliseconds } from 'date-fns'
 import { call, delay, put, race, select, take } from 'redux-saga/effects'
 
 import { Exchange } from '@core'
 import { APIType } from '@core/network/api'
-import { CoinType, PaymentType, PaymentValue, SwapQuoteType } from '@core/types'
+import { CoinType, PaymentType, PaymentValue, Product, SwapQuoteType } from '@core/types'
 import { errorHandler } from '@core/utils'
 import { actions, selectors } from 'data'
 import { SWAP_ACCOUNTS_SELECTOR } from 'data/coins/model/swap'
 import { getCoinAccounts } from 'data/coins/selectors'
 import { generateProvisionalPaymentAmount } from 'data/coins/utils'
-import { NabuProducts } from 'data/types'
+import { ModalName, NabuProducts, ProductEligibilityForUser } from 'data/types'
 
+import { actions as custodialActions } from '../../custodial/slice'
 import profileSagas from '../../modules/profile/sagas'
 import { convertStandardToBase } from '../exchange/services'
-import { swap } from '../selectors'
 import sendSagas from '../send/sagas'
 import { selectReceiveAddress } from '../utils/sagas'
-import * as A from './actions'
-import * as AT from './actionTypes'
 import { FALLBACK_DELAY } from './model'
 import * as S from './selectors'
+import { actions as A } from './slice'
 import {
   InitSwapFormValuesType,
   MempoolFeeType,
@@ -36,7 +35,7 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas; network
     coreSagas,
     networks
   })
-  const { waitForUserData } = profileSagas({ api, coreSagas, networks })
+  const { isTier2, waitForUserData } = profileSagas({ api, coreSagas, networks })
 
   const cancelOrder = function* ({ payload }: ReturnType<typeof A.cancelOrder>) {
     try {
@@ -198,7 +197,24 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas; network
       const payment = paymentGetOrElse(BASE.coin, paymentR)
       if (onChain) {
         try {
-          yield call(buildAndPublishPayment, payment.coin, payment, order.kind.depositAddress)
+          const hotWalletAddress = selectors.core.walletOptions
+            .getHotWalletAddresses(yield select(), Product.SWAP)
+            .getOrElse(null)
+          if (typeof hotWalletAddress !== 'string') {
+            console.error(
+              'Unable to retreive hotwallet address; falling back to deposit and sweep.'
+            )
+            yield call(buildAndPublishPayment, payment.coin, payment, order.kind.depositAddress)
+          } else {
+            yield call(
+              buildAndPublishPayment,
+              payment.coin,
+              payment,
+              order.kind.depositAddress,
+              hotWalletAddress
+            )
+          }
+
           yield call(api.updateSwapOrder, order.id, 'DEPOSIT_SENT')
         } catch (e) {
           yield call(api.updateSwapOrder, order.id, 'CANCEL')
@@ -264,17 +280,17 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas; network
 
   // 👋
   // Eventually there won't be much difference between a swap, buy, or sell.
-  // We have 2 different directories (swap/simpleBuy) of sagas/actions/types
+  // We have 2 different directories (swap/buySell) of sagas/actions/types
   // but on the BE there won't be any difference, just on the FE (if product)
   // decides to keep things that way. In my opinion there is no difference
   // but for now I'm copying a lot of the code from here and putting it in
-  // simpleBuy.
+  // buySell.
   //
-  // As of this writing, simpleBuy only fetches one quote and doesn't need
+  // As of this writing, buySell only fetches one quote and doesn't need
   // to worry about expiration, but since we're now using swap 2.0 for sell
   // (and eventually buy) we'll need to worry about expiration and polling.
   //
-  // We can't just call the swap fetchQuote function from simpleBuy, because
+  // We can't just call the swap fetchQuote function from buySell, because
   // setting the swap quote loading will set the buy/sell quote loading,
   // which we might not want. This is a case of breakdown between product/design/development.
 
@@ -303,8 +319,8 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas; network
           COUNTER.coin,
           new BigNumber(convertStandardToBase(BASE.coin, 1))
         )
-        yield put(A.fetchQuoteSuccess(quote, rate))
-        const refresh = -moment().diff(quote.expiresAt)
+        yield put(A.fetchQuoteSuccess({ quote, rate }))
+        const refresh = Math.abs(differenceInMilliseconds(new Date(), new Date(quote.expiresAt)))
         yield delay(refresh)
       } catch (e) {
         const error = errorHandler(e)
@@ -393,8 +409,8 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas; network
       ) as SwapAmountFormValues
 
       yield race({
-        failure: take(AT.FETCH_QUOTE_FAILURE),
-        success: take(AT.FETCH_QUOTE_SUCCESS)
+        failure: take(A.fetchQuoteFailure.type),
+        success: take(A.fetchQuoteSuccess.type)
       })
       const quote = S.getQuote(yield select()).getOrFail(NO_QUOTE)
 
@@ -441,7 +457,7 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas; network
   const showModal = function* ({ payload }: ReturnType<typeof A.showModal>) {
     const { baseCurrency, counterCurrency, origin } = payload
     yield put(
-      actions.modals.showModal('SWAP_MODAL', {
+      actions.modals.showModal(ModalName.SWAP_MODAL, {
         baseCurrency,
         counterCurrency,
         origin
@@ -449,6 +465,36 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas; network
     )
 
     const latestPendingOrder = S.getLatestPendingSwapTrade(yield select())
+
+    // get current user tier
+    const isUserTier2 = yield call(isTier2)
+
+    // check is user eligible to do sell/buy
+    // we skip this for gold users
+    if (!isUserTier2 && !latestPendingOrder) {
+      yield put(actions.custodial.fetchProductEligibilityForUser())
+      yield take([
+        custodialActions.fetchProductEligibilityForUserSuccess.type,
+        custodialActions.fetchProductEligibilityForUserFailure.type
+      ])
+
+      const products = selectors.custodial.getProductEligibilityForUser(yield select()).getOrElse({
+        swap: { enabled: false, maxOrdersLeft: 0 }
+      } as ProductEligibilityForUser)
+
+      const userCanBuyMore = products.swap?.maxOrdersLeft > 0
+      // prompt upgrade modal in case that user can't buy more
+      if (!userCanBuyMore) {
+        yield put(
+          actions.modals.showModal(ModalName.UPGRADE_NOW_SILVER_MODAL, {
+            origin: 'BuySellInit'
+          })
+        )
+        // close swap Modal
+        yield put(actions.modals.closeModal(ModalName.SWAP_MODAL))
+        return
+      }
+    }
 
     if (latestPendingOrder) {
       yield put(
@@ -507,6 +553,26 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas; network
     yield put(actions.form.change('swapAmount', 'amount', amount))
   }
 
+  const fetchCrossBorderLimits = function* ({
+    payload
+  }: ReturnType<typeof A.fetchCrossBorderLimits>) {
+    const { currency, fromAccount, inputCurrency, outputCurrency, toAccount } = payload
+    try {
+      yield put(A.fetchCrossBorderLimitsLoading())
+      const limitsResponse: ReturnType<typeof api.getCrossBorderTransactions> = yield call(
+        api.getCrossBorderTransactions,
+        inputCurrency,
+        fromAccount,
+        outputCurrency,
+        toAccount,
+        currency
+      )
+      yield put(A.fetchCrossBorderLimitsSuccess(limitsResponse))
+    } catch (e) {
+      yield put(A.fetchCrossBorderLimitsFailure(e))
+    }
+  }
+
   return {
     calculateProvisionalPayment,
     cancelOrder,
@@ -514,6 +580,7 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas; network
     changeCounter,
     changeTrendingPair,
     createOrder,
+    fetchCrossBorderLimits,
     fetchCustodialEligibility,
     fetchLimits,
     fetchPairs,

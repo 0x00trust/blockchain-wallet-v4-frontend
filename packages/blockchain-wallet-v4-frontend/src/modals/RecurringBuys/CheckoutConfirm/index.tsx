@@ -3,19 +3,18 @@ import { FormattedMessage } from 'react-intl'
 import { connect, ConnectedProps } from 'react-redux'
 import { bindActionCreators, Dispatch } from 'redux'
 
-import { Button, Link, Text, TextGroup } from 'blockchain-info-components'
 import { fiatToString } from '@core/exchange/utils'
+import { BSOrderType, FiatType } from '@core/types'
+import { Button, Link, Text, TextGroup } from 'blockchain-info-components'
 import {
   FlyoutContainer,
   FlyoutContent,
   FlyoutFooter,
   FlyoutHeader,
-  FlyoutSubHeader,
-  getPeriodSubTitleText,
-  getPeriodTitleText
-} from 'components/Flyout'
+  FlyoutSubHeader
+} from 'components/Flyout/Layout'
+import { getPeriodSubTitleText, getPeriodTitleText } from 'components/Flyout/model'
 import { CheckoutRow } from 'components/Rows'
-import { FiatType, SBOrderType } from '@core/types'
 import { actions, selectors } from 'data'
 import {
   getBankAccount,
@@ -24,11 +23,11 @@ import {
   getCounterAmount,
   getCounterCurrency,
   getPaymentMethodId
-} from 'data/components/simpleBuy/model'
+} from 'data/components/buySell/model'
 import { RootState } from 'data/rootReducer'
 import { BankTransferAccountType, RecurringBuyPeriods } from 'data/types'
 
-import { displayFiat, getPaymentMethod, getPaymentMethodDetails } from '../../SimpleBuy/model'
+import { displayFiat, getPaymentMethod, getPaymentMethodDetails } from '../../BuySell/model'
 import { Props as _P } from '..'
 
 const Confirm = ({
@@ -116,8 +115,8 @@ const Confirm = ({
 
         <CheckoutRow
           title={<FormattedMessage id='checkout.payment_method' defaultMessage='Payment Method' />}
-          text={getPaymentMethod(order, {} as BankTransferAccountType)}
-          additionalText={getPaymentMethodDetails(order, bankAccount, cardDetails)}
+          text={getPaymentMethod({ bankAccount: {} as BankTransferAccountType, order })}
+          additionalText={getPaymentMethodDetails({ bankAccount, cardDetails, order })}
         />
 
         <CheckoutRow
@@ -179,10 +178,10 @@ const Confirm = ({
 
 const mapStateToProps = (state: RootState) => ({
   bankAccounts: selectors.components.brokerage.getBankTransferAccounts(state).getOrElse([]),
-  cards: selectors.components.simpleBuy.getSBCards(state).getOrElse([]),
-  order: selectors.components.simpleBuy.getSBOrder(state) as SBOrderType,
+  cards: selectors.components.buySell.getBSCards(state).getOrElse([]),
+  order: selectors.components.buySell.getBSOrder(state) as BSOrderType,
   period: selectors.components.recurringBuy.getPeriod(state) as RecurringBuyPeriods,
-  quote: selectors.components.simpleBuy.getSBQuote(state).getOrFail('Could not get exchange rate')
+  quote: selectors.components.buySell.getBSQuote(state).getOrFail('Could not get exchange rate')
 })
 
 const mapDispatchToProps = (dispatch: Dispatch) => ({

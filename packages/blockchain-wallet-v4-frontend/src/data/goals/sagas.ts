@@ -1,21 +1,28 @@
 import base64 from 'base-64'
 import BigNumber from 'bignumber.js'
 import bip21 from 'bip21'
+import * as lz from 'lz-string'
 import { anyPass, equals, includes, map, path, pathOr, prop, startsWith } from 'ramda'
 import { all, call, delay, join, put, select, spawn, take } from 'redux-saga/effects'
 
 import { Exchange, utils } from '@core'
-import { InterestAfterTransactionType, RatesType, WalletFiatType } from '@core/types'
+import {
+  InterestAfterTransactionType,
+  RatesType,
+  TermsAndConditionType,
+  WalletFiatType
+} from '@core/types'
 import { errorHandler } from '@core/utils'
 import { actions, model, selectors } from 'data'
 import { getBchBalance, getBtcBalance } from 'data/balance/sagas'
 import { parsePaymentRequest } from 'data/bitpay/sagas'
+import { NftOrderStepEnum } from 'data/components/nfts/types'
 import { ModalName } from 'data/modals/types'
 import profileSagas from 'data/modules/profile/sagas'
 import * as C from 'services/alerts'
 
 import { WAIT_FOR_INTEREST_PROMO_MODAL } from './model'
-import { DeepLinkGoal, GoalType } from './types'
+import { DeepLinkGoal, GeneralRedirectType, GoalType, UnifiedAccountRedirectType } from './types'
 
 const origin = 'Goals'
 
@@ -24,7 +31,7 @@ export default ({ api, coreSagas, networks }) => {
   const { NONE } = KYC_STATES
   const { EXPIRED, GENERAL } = DOC_RESUBMISSION_REASONS
 
-  const { waitForUserData } = profileSagas({
+  const { fetchUser, waitForUserData } = profileSagas({
     api,
     coreSagas,
     networks
@@ -34,9 +41,37 @@ export default ({ api, coreSagas, networks }) => {
 
   const isKycNotFinished = function* () {
     yield call(waitForUserData)
-    return (yield select(selectors.modules.profile.getUserKYCState))
+    return selectors.modules.profile
+      .getUserKYCState(yield select())
       .map(equals(NONE))
       .getOrElse(false)
+  }
+
+  // TODO: use new world deeplinking once merged
+  const defineExchangeSettingsGoal = function* (search) {
+    const params = new URLSearchParams(search)
+    const guid = params.get('guid')
+    const settingsChange = params.get('change')
+    const email = decodeURIComponent(params.get('email') as string)
+    yield put(actions.cache.removeStoredLogin())
+    // after clearing cache in case previous wallet is
+    // not the same one for exchange settings
+    // repopulate cache
+    yield put(actions.cache.guidStored(guid))
+    yield put(actions.cache.exchangeWalletGuid(guid))
+    yield put(actions.cache.exchangeEmail(email))
+    yield put(actions.cache.emailStored(email))
+    yield put(actions.cache.setUnifiedAccount(true))
+    yield put(
+      actions.goals.saveGoal({
+        data: {
+          email,
+          guid,
+          settingsChange
+        },
+        name: 'settings'
+      })
+    )
   }
 
   const defineLinkAccountGoal = function* (search) {
@@ -77,6 +112,46 @@ export default ({ api, coreSagas, networks }) => {
     yield put(actions.goals.saveGoal({ data: { tier }, name: 'kyc' }))
   }
 
+  const defineMakeOfferNftGoal = function* (search) {
+    // /#/open/make-offer-nft?contract_address=0x123&token_id=456
+    const params = new URLSearchParams(search)
+
+    const contract_address = params.get('contract_address')
+    const token_id = params.get('token_id')
+
+    yield put(
+      actions.goals.saveGoal({
+        data: { contract_address, token_id },
+        name: DeepLinkGoal.MAKE_OFFER_NFT
+      })
+    )
+  }
+
+  const defineBuyNftGoal = function* (search) {
+    // /#/open/buy-nft?contract_address=0x123&token_id=456&order={order}
+    const params = new URLSearchParams(search)
+
+    const contract_address = params.get('contract_address')
+    const token_id = params.get('token_id')
+    const order = JSON.parse(lz.decompressFromEncodedURIComponent(params.get('order')))
+
+    yield put(
+      actions.goals.saveGoal({
+        data: { contract_address, order, token_id },
+        name: DeepLinkGoal.BUY_NFT
+      })
+    )
+  }
+
+  const defineDeeplinkNftsGoal = function* (pathname) {
+    yield put(
+      actions.goals.saveGoal({
+        data: { pathname },
+        name: DeepLinkGoal.NFTS
+      })
+    )
+  }
+
   const defineSwapGoal = function* () {
     yield put(actions.goals.saveGoal({ data: {}, name: 'swap' }))
   }
@@ -85,7 +160,7 @@ export default ({ api, coreSagas, networks }) => {
     yield put(actions.goals.saveGoal({ data: {}, name: 'interest' }))
   }
 
-  const defineSimpleBuyGoal = function* (search) {
+  const defineBuySellGoal = function* (search) {
     // /#/open/simple-buy?crypto={BTC | ETH | ...}&amount={1 | 99 | 200 | ...}&email={test@blockchain.com | ...}&fiatCurrency={USD | GBP | ...}
     const params = new URLSearchParams(search)
     const amount = params.get('amount')
@@ -101,7 +176,7 @@ export default ({ api, coreSagas, networks }) => {
           email,
           fiatCurrency
         },
-        name: 'simpleBuy'
+        name: 'buySell'
       })
     )
 
@@ -161,21 +236,39 @@ export default ({ api, coreSagas, networks }) => {
     }
   }
 
+  const defineWalletConnectGoal = function* (search) {
+    // cant use URLSearchParams as it parses the oddly formed uri incorrectly
+    const walletConnectURI = search.split('?uri=')[1]
+    yield put(actions.goals.saveGoal({ data: walletConnectURI, name: 'walletConnect' }))
+  }
+
   const defineDeepLinkGoals = function* (pathname, search) {
-    if (startsWith(DeepLinkGoal.LINK_ACCOUNT, pathname)) {
-      return yield call(defineLinkAccountGoal, search)
+    // /#/open/wc?uri={wc_uri}
+    if (startsWith(DeepLinkGoal.WALLET_CONNECT, pathname)) {
+      return yield call(defineWalletConnectGoal, search)
     }
 
-    if (startsWith(DeepLinkGoal.REFERRAL, pathname)) {
-      return yield call(defineReferralGoal, search)
+    if (startsWith(DeepLinkGoal.MAKE_OFFER_NFT, pathname)) {
+      return yield call(defineMakeOfferNftGoal, search)
     }
 
+    if (startsWith(DeepLinkGoal.BUY_NFT, pathname)) {
+      return yield call(defineBuyNftGoal, search)
+    }
+
+    if (startsWith(DeepLinkGoal.NFTS, pathname)) {
+      return yield call(defineDeeplinkNftsGoal, pathname)
+    }
+
+    // exchange deeplink to chanage password /#/open/change-password
+    if (startsWith(DeepLinkGoal.SETTINGS, pathname)) {
+      return yield call(defineExchangeSettingsGoal, search)
+    }
     // /#/open/kyc?tier={0 | 1 | 2 | ...} tier is optional
     if (startsWith(DeepLinkGoal.KYC, pathname)) {
       return yield call(defineKycGoal, search)
     }
 
-    // TODO check why it uses includes
     // crypto send / bitpay links
     if (includes(DeepLinkGoal.BITCOIN, pathname)) {
       return yield call(defineSendCryptoGoal, pathname, search)
@@ -188,7 +281,7 @@ export default ({ api, coreSagas, networks }) => {
 
     // /#/open/simple-buy
     if (startsWith(DeepLinkGoal.SIMPLE_BUY, pathname)) {
-      return yield call(defineSimpleBuyGoal, search)
+      return yield call(defineBuySellGoal, search)
     }
 
     // /#/open/swap
@@ -201,13 +294,20 @@ export default ({ api, coreSagas, networks }) => {
       return yield call(defineInterestGoal)
     }
 
+    if (startsWith(DeepLinkGoal.LINK_ACCOUNT, pathname)) {
+      return yield call(defineLinkAccountGoal, search)
+    }
+
+    if (startsWith(DeepLinkGoal.REFERRAL, pathname)) {
+      return yield call(defineReferralGoal, search)
+    }
+
     yield call(defineActionGoal, pathname, search)
   }
 
   const defineGoals = function* () {
     const search = yield select(selectors.router.getSearch)
     const pathname = yield select(selectors.router.getPathname)
-    yield take('@@router/LOCATION_CHANGE')
     const deepLink = prop(1, pathname.match('/open/(.*)'))
     if (deepLink) yield call(defineDeepLinkGoals, deepLink, search)
   }
@@ -238,6 +338,25 @@ export default ({ api, coreSagas, networks }) => {
     }
   }
 
+  // TODO: use new world deeplinking once merged
+  const runSettingsDeeplinkRedirect = function* (goal: GoalType) {
+    const { data, id } = goal
+    const { settingsChange } = data
+    yield put(actions.goals.deleteGoal(id))
+    switch (settingsChange) {
+      case 'password':
+        yield put(actions.goals.addInitialRedirect(UnifiedAccountRedirectType.CHANGE_PASSWORD))
+        break
+      case 'email':
+        yield put(actions.goals.addInitialRedirect(UnifiedAccountRedirectType.CHANGE_EMAIL))
+        break
+      case '2fa':
+        yield put(actions.goals.addInitialRedirect(UnifiedAccountRedirectType.CHANGE_2FA))
+        break
+      default:
+    }
+  }
+
   const runKycGoal = function* (goal: GoalType) {
     try {
       const { data, id } = goal
@@ -260,7 +379,7 @@ export default ({ api, coreSagas, networks }) => {
     }
   }
 
-  const runSimpleBuyGoal = function* (goal: GoalType) {
+  const runBuySellGoal = function* (goal: GoalType) {
     const {
       data: { amount, crypto, fiatCurrency, id }
     } = goal
@@ -274,7 +393,7 @@ export default ({ api, coreSagas, networks }) => {
           fiatCurrency,
           origin
         },
-        key: 'simpleBuyModal',
+        key: 'buySellModal',
         name: 'SIMPLE_BUY_MODAL'
       })
     )
@@ -505,6 +624,31 @@ export default ({ api, coreSagas, networks }) => {
     }
   }
 
+  const runWalletConnectGoal = function* (goal: GoalType) {
+    try {
+      const { data: uri, id } = goal
+      const walletConnectEnabled = (yield select(
+        selectors.core.walletOptions.getWalletConnectEnabled
+      )).getOrElse(false)
+      yield put(actions.goals.deleteGoal(id))
+      if (walletConnectEnabled) {
+        yield put(
+          actions.goals.addInitialModal({
+            data: {
+              origin,
+              uri
+            },
+            key: 'walletConnect',
+            name: ModalName.WALLET_CONNECT_MODAL
+          })
+        )
+      }
+    } catch (e) {
+      const error = errorHandler(e)
+      yield put(actions.logs.logErrorMessage('goals', 'runWalletConnectGoal', error))
+    }
+  }
+
   const runSyncPitGoal = function* (goal: GoalType) {
     const { id } = goal
     yield put(actions.goals.deleteGoal(id))
@@ -529,7 +673,7 @@ export default ({ api, coreSagas, networks }) => {
     yield put(actions.goals.deleteGoal(id))
     // Check if new wallet is from regular new registration
     // or nabu account reset
-    const isAccountReset: boolean = yield select(selectors.auth.getAccountReset)
+    const isAccountReset: boolean = yield select(selectors.signup.getAccountReset)
     if (firstLogin && !isAccountReset) {
       yield put(
         actions.goals.addInitialModal({
@@ -575,14 +719,48 @@ export default ({ api, coreSagas, networks }) => {
     }
   }
 
+  const runMakeOfferNftGoal = function* (goal: GoalType) {
+    yield take(actions.auth.loginSuccess)
+    yield put(
+      actions.router.push(`/nfts/assets/${goal.data.contract_address}/${goal.data.token_id}`)
+    )
+    yield put(
+      actions.components.nfts.nftOrderFlowOpen({
+        asset_contract_address: goal.data.contract_address,
+        step: NftOrderStepEnum.MAKE_OFFER,
+        token_id: goal.data.token_id
+      })
+    )
+  }
+
+  const runBuyNftGoal = function* (goal: GoalType) {
+    yield take(actions.auth.loginSuccess)
+    yield put(
+      actions.router.push(`/nfts/assets/${goal.data.contract_address}/${goal.data.token_id}`)
+    )
+    yield put(
+      actions.components.nfts.nftOrderFlowOpen({
+        asset_contract_address: goal.data.contract_address,
+        order: goal.data.order,
+        step: NftOrderStepEnum.BUY,
+        token_id: goal.data.token_id
+      })
+    )
+  }
+
+  const runDeeplinkNftGoal = function* (goal: GoalType) {
+    yield take(actions.auth.loginSuccess)
+    yield put(actions.router.push(`/${goal.data.pathname}`))
+  }
+
   const runInterestRedirect = function* (goal: GoalType) {
     const { id } = goal
     yield put(actions.goals.deleteGoal(id))
 
-    yield put(actions.goals.addInitialRedirect('interest'))
+    yield put(actions.goals.addInitialRedirect(GeneralRedirectType.REWARDS))
   }
   const runInterestPromo = function* (goal: GoalType) {
-    // do not show imediately modal, wait 5 seconds
+    // do not show modal immediately, wait 5 seconds
     yield delay(WAIT_FOR_INTEREST_PROMO_MODAL)
     yield call(waitForUserData)
     const { id } = goal
@@ -624,8 +802,17 @@ export default ({ api, coreSagas, networks }) => {
   const runInitialRedirect = function* () {
     const initialRedirect = yield select(selectors.goals.getInitialRedirect)
 
-    if (initialRedirect === 'interest') {
+    if (initialRedirect === GeneralRedirectType.REWARDS) {
       return yield put(actions.router.push(`/rewards`))
+    }
+    if (
+      initialRedirect === UnifiedAccountRedirectType.CHANGE_EMAIL ||
+      initialRedirect === UnifiedAccountRedirectType.CHANGE_2FA
+    ) {
+      return yield put(actions.router.push(`/security-center/basic`))
+    }
+    if (initialRedirect === UnifiedAccountRedirectType.CHANGE_PASSWORD) {
+      return yield put(actions.router.push(`/security-center/advanced`))
     }
   }
 
@@ -633,16 +820,19 @@ export default ({ api, coreSagas, networks }) => {
     const initialModals = yield select(selectors.goals.getInitialModals)
     const {
       airdropClaim,
+      buySellModal,
       interestPromo,
       kycDocResubmit,
+      kycUpgradeRequiredNotice,
       linkAccount,
       payment,
-      simpleBuyModal,
       swap,
       swapGetStarted,
       swapUpgrade,
+      termsAndConditions,
       transferEth,
       upgradeForAirdrop,
+      walletConnect,
       welcomeModal
     } = initialModals
 
@@ -660,6 +850,9 @@ export default ({ api, coreSagas, networks }) => {
         })
       )
     }
+    if (walletConnect) {
+      return yield put(actions.modals.showModal(ModalName.WALLET_CONNECT_MODAL, walletConnect.data))
+    }
     if (payment) {
       return yield put(actions.modals.showModal(payment.name, payment.data))
     }
@@ -675,6 +868,14 @@ export default ({ api, coreSagas, networks }) => {
     if (swapUpgrade) {
       return yield put(actions.modals.showModal(swapUpgrade.name, swapUpgrade.data))
     }
+    if (kycUpgradeRequiredNotice) {
+      return yield put(
+        actions.modals.showModal(kycUpgradeRequiredNotice.name, kycUpgradeRequiredNotice.data)
+      )
+    }
+    if (termsAndConditions) {
+      return yield put(actions.modals.showModal(termsAndConditions.name, termsAndConditions.data))
+    }
     if (airdropClaim) {
       return yield put(
         actions.modals.showModal(airdropClaim.name, {
@@ -682,11 +883,11 @@ export default ({ api, coreSagas, networks }) => {
         })
       )
     }
-    if (simpleBuyModal) {
+    if (buySellModal) {
       return yield put(
         actions.components.buySell.showModal({
-          cryptoCurrency: simpleBuyModal.data.crypto,
-          origin: 'SimpleBuyLink'
+          cryptoCurrency: buySellModal.data.crypto,
+          origin: 'BuySellLink'
         })
       )
     }
@@ -695,11 +896,76 @@ export default ({ api, coreSagas, networks }) => {
     }
     if (welcomeModal) {
       const sddEligible = yield call(api.fetchSDDEligible)
+      const showCompleteYourProfile = selectors.core.walletOptions
+        .getCompleteYourProfile(yield select())
+        .getOrElse(null)
       // show SDD flow for eligible country
       if (sddEligible.eligible) {
+        // show new complete profile modal
+        if (showCompleteYourProfile) {
+          return yield put(
+            actions.modals.showModal(ModalName.COMPLETE_USER_PROFILE, welcomeModal.data)
+          )
+        }
+
         return yield put(actions.components.buySell.showModal({ origin: 'WelcomeModal' }))
       }
       return yield put(actions.modals.showModal(welcomeModal.name, welcomeModal.data))
+    }
+  }
+
+  const runKycUpgradeRequiredNoticeGoal = function* (goal: GoalType) {
+    yield delay(WAIT_FOR_INTEREST_PROMO_MODAL)
+    yield call(fetchUser)
+    yield call(waitForUserData)
+    const { id } = goal
+    yield put(actions.goals.deleteGoal(id))
+
+    const { current } = (yield select(selectors.modules.profile.getUserTiers)).getOrElse({
+      current: 0
+    }) || { current: 0 }
+
+    if (current < 2) {
+      yield put(
+        actions.goals.addInitialModal({
+          data: { origin },
+          key: 'kycUpgradeRequiredNotice',
+          name: ModalName.VERIFY_NOTICE
+        })
+      )
+    }
+  }
+
+  const runTermsAndConditionsGoal = function* (goal: GoalType) {
+    yield delay(WAIT_FOR_INTEREST_PROMO_MODAL)
+    yield call(fetchUser)
+    yield call(waitForUserData)
+    const { id } = goal
+    yield put(actions.goals.deleteGoal(id))
+
+    const showCompleteYourProfile = selectors.core.walletOptions
+      .getShowTermsAndConditions(yield select())
+      .getOrElse(null)
+
+    yield put(actions.components.termsAndConditions.fetchTermsAndConditions())
+    // make sure that fetch is done
+    yield take([
+      actions.components.termsAndConditions.fetchTermsAndConditionsSuccess.type,
+      actions.components.termsAndConditions.fetchTermsAndConditionsFailure.type
+    ])
+
+    const termsAndConditionsChanged = selectors.components.termsAndConditions
+      .getTermsAndConditions(yield select())
+      .getOrElse({} as TermsAndConditionType)
+
+    if (showCompleteYourProfile && termsAndConditionsChanged?.termsAndConditions) {
+      yield put(
+        actions.goals.addInitialModal({
+          data: { origin },
+          key: 'termsAndConditions',
+          name: ModalName.TERMS_AND_CONDITIONS
+        })
+      )
     }
   }
 
@@ -711,11 +977,32 @@ export default ({ api, coreSagas, networks }) => {
         case 'airdropClaim':
           yield call(runAirdropClaimGoal, goal)
           break
+        case 'buySell':
+          yield call(runBuySellGoal, goal)
+          break
+        case 'settings':
+          yield call(runSettingsDeeplinkRedirect, goal)
+          break
         case 'kyc':
           yield call(runKycGoal, goal)
           break
         case 'kycDocResubmit':
           yield call(runKycDocResubmitGoal, goal)
+          break
+        case 'interest':
+          yield call(runInterestRedirect, goal)
+          break
+        case 'interestPromo':
+          yield call(runInterestPromo, goal)
+          break
+        case 'make-offer-nft':
+          yield call(runMakeOfferNftGoal, goal)
+          break
+        case 'buy-nft':
+          yield call(runBuyNftGoal, goal)
+          break
+        case 'nfts':
+          yield call(runDeeplinkNftGoal, goal)
           break
         case 'linkAccount':
           yield call(runLinkAccountGoal, goal)
@@ -728,9 +1015,6 @@ export default ({ api, coreSagas, networks }) => {
           break
         case 'referral':
           yield call(runReferralGoal, goal)
-          break
-        case 'simpleBuy':
-          yield call(runSimpleBuyGoal, goal)
           break
         case 'swap':
           yield call(runSwapModal, goal)
@@ -747,14 +1031,25 @@ export default ({ api, coreSagas, networks }) => {
         case 'upgradeForAirdrop':
           yield call(runUpgradeForAirdropGoal, goal)
           break
+        case 'walletConnect':
+          yield call(runWalletConnectGoal, goal)
+          break
         case 'welcomeModal':
           yield call(runWelcomeModal, goal)
           break
+        // eslint-disable-next-line no-duplicate-case
         case 'interest':
           yield call(runInterestRedirect, goal)
           break
+        // eslint-disable-next-line no-duplicate-case
         case 'interestPromo':
           yield call(runInterestPromo, goal)
+          break
+        case 'termsAndConditions':
+          yield call(runTermsAndConditionsGoal, goal)
+          break
+        case 'kycUpgradeRequiredNotice':
+          yield call(runKycUpgradeRequiredNoticeGoal, goal)
           break
         default:
           break
@@ -773,9 +1068,40 @@ export default ({ api, coreSagas, networks }) => {
     yield call(showInitialModal)
   }
 
+  const saveGoals = function* (firstLogin) {
+    // only for non first login users we save goal here for first login users we do that over verify email page
+    if (!firstLogin) {
+      yield put(actions.goals.saveGoal({ data: {}, name: 'welcomeModal' }))
+    }
+    yield put(actions.goals.saveGoal({ data: {}, name: 'swapUpgrade' }))
+    yield put(actions.goals.saveGoal({ data: {}, name: 'swapGetStarted' }))
+    yield put(actions.goals.saveGoal({ data: {}, name: 'kycDocResubmit' }))
+    yield put(actions.goals.saveGoal({ data: {}, name: 'transferEth' }))
+    yield put(actions.goals.saveGoal({ data: {}, name: 'syncPit' }))
+    yield put(actions.goals.saveGoal({ data: {}, name: 'interestPromo' }))
+    yield put(actions.goals.saveGoal({ data: {}, name: 'termsAndConditions' }))
+    // only for existing users
+    if (!firstLogin) {
+      yield put(actions.goals.saveGoal({ data: {}, name: 'kycUpgradeRequiredNotice' }))
+    }
+    // when airdrops are running
+    // yield put(actions.goals.saveGoal('upgradeForAirdrop'))
+    // yield put(actions.goals.saveGoal('airdropClaim'))
+  }
+
+  // watch for /open/nft calls and run the goals
+  const routerChanged = function* (action) {
+    if (action?.payload?.location?.pathname?.includes('open')) {
+      yield call(defineGoals)
+      yield call(runGoals)
+    }
+  }
+
   return {
     defineGoals,
+    routerChanged,
     runGoal,
-    runGoals
+    runGoals,
+    saveGoals
   }
 }

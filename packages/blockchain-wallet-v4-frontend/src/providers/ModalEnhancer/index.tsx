@@ -4,16 +4,20 @@ import { connect } from 'react-redux'
 import { equals } from 'ramda'
 import { compose } from 'redux'
 
+import { BSOrderType, BSPaymentTypes } from '@core/types'
 import { actions, selectors } from 'data'
-import { ModalNameType, ModalType } from 'data/types'
+import { BuySellStepType, ModalNameType, ModalType } from 'data/types'
 
 const mapDispatchToProps = (dispatch): LinkDispatchPropsType => ({
+  cancelBSOrder: compose(dispatch, actions.components.buySell.cancelOrder),
   close: compose(dispatch, actions.modals.closeModal),
   closeAll: compose(dispatch, actions.modals.closeAllModals),
   update: compose(dispatch, actions.modals.updateModalOptions)
 })
 
 const mapStateToProps = (state): LinkStatePropsType => ({
+  buySellOrder: selectors.components.buySell.getBSOrder(state),
+  buySellStep: selectors.components.buySell.getStep(state),
   modals: selectors.modals.getModals(state)
 })
 
@@ -23,15 +27,19 @@ type OwnProps = {
   disableOutsideClose?: boolean
 }
 type LinkDispatchPropsType = {
+  cancelBSOrder: (order: BSOrderType) => void
   close: (modalName?: ModalNameType) => void
   closeAll: () => void
   update: () => void
 }
 type LinkStatePropsType = {
+  buySellOrder: BSOrderType | undefined
+  buySellStep: keyof typeof BuySellStepType
   modals: Array<ModalType>
 }
 
 type OptionsType = {
+  fixed?: boolean
   preventEscapeClose?: boolean
   transition?: number
 }
@@ -42,10 +50,25 @@ export default (type: ModalNameType, options: OptionsType = {}) =>
   (Component) =>
     enhance(
       class Modal extends PureComponent<Props> {
+        node: HTMLElement | null = null
+
         state = {}
+
+        handleBuySellClose = () => {
+          const { buySellOrder, buySellStep, cancelBSOrder } = this.props
+          if (
+            (buySellOrder?.paymentType === BSPaymentTypes.FUNDS ||
+              buySellOrder?.paymentType === BSPaymentTypes.PAYMENT_CARD ||
+              buySellOrder?.paymentType === BSPaymentTypes.BANK_TRANSFER) &&
+            buySellStep !== 'ORDER_SUMMARY'
+          ) {
+            cancelBSOrder(buySellOrder)
+          }
+        }
 
         handleClose = (modalName?: ModalNameType) => {
           if (options.transition) {
+            this.handleBuySellClose()
             this.setState({ userClickedOutside: true })
             setTimeout(() => {
               this.props.close(modalName)
@@ -58,6 +81,7 @@ export default (type: ModalNameType, options: OptionsType = {}) =>
 
         handleClick = (e) => {
           // @ts-ignore
+          // eslint-disable-next-line
           const modalContainer = ReactDOM.findDOMNode(this.node)
           if (
             modalContainer &&
@@ -81,7 +105,6 @@ export default (type: ModalNameType, options: OptionsType = {}) =>
           const filtered = modals.filter((m) => m.type === type)
           const setRef = (node) => {
             if (node) {
-              // @ts-ignore
               this.node = node
               node.focus()
             }
@@ -90,12 +113,18 @@ export default (type: ModalNameType, options: OptionsType = {}) =>
           return filtered.length ? (
             <div>
               {filtered.map((modal, i) => (
+                // eslint-disable-next-line
                 <div
-                  key={`${type}:${i}`}
+                  key={`${type}:${i}`} // eslint-disable-line
                   onKeyDown={this.onKeyPressed}
                   onMouseDown={this.handleClick}
                   ref={setRef}
-                  tabIndex={0}
+                  tabIndex={0} // eslint-disable-line
+                  style={
+                    options.fixed
+                      ? { bottom: 0, left: 0, position: 'fixed', right: 0, top: 0, zIndex: 100 }
+                      : {}
+                  }
                 >
                   <Component
                     // @ts-ignore

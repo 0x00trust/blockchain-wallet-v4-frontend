@@ -5,7 +5,11 @@ import { Field, reduxForm } from 'redux-form'
 import styled from 'styled-components'
 
 import { Button, Text } from 'blockchain-info-components'
-import { Form, FormGroup, FormItem, FormLabel, TextArea } from 'components/Form'
+import Form from 'components/Form/Form'
+import FormGroup from 'components/Form/FormGroup'
+import FormItem from 'components/Form/FormItem'
+import FormLabel from 'components/Form/FormLabel'
+import TextArea from 'components/Form/TextArea'
 import { required } from 'services/forms'
 
 const DetailRow = styled.div`
@@ -29,28 +33,22 @@ const ClickableText = styled(Text)`
   margin-right: 15px;
 `
 
-const FirstStep = props => {
+const FirstStep = (props) => {
   const { address, closeAll, handleSubmit, invalid, submitting } = props
   return (
     <Form onSubmit={handleSubmit}>
       <DetailRow>
         <Text size='14px' weight={500}>
-          <FormattedMessage
-            id='modals.signmessage.firststep.address'
-            defaultMessage='Address:'
-          />
+          <FormattedMessage id='modals.signmessage.firststep.address' defaultMessage='Address:' />
         </Text>
         <Text size='14px' weight={400} data-e2e='signMessageAddressValue'>
           {address}
         </Text>
       </DetailRow>
-      <FormGroup inline margin={'15px'}>
-        <FormItem width={'100%'}>
+      <FormGroup inline margin='15px'>
+        <FormItem width='100%'>
           <FormLabel htmlFor='message'>
-            <FormattedMessage
-              id='modals.signmessage.firststep.message'
-              defaultMessage='Message:'
-            />
+            <FormattedMessage id='modals.signmessage.firststep.message' defaultMessage='Message:' />
           </FormLabel>
           <Field
             name='message'
@@ -77,10 +75,7 @@ const FirstStep = props => {
             disabled={submitting || invalid}
             data-e2e='signMessageButton'
           >
-            <FormattedMessage
-              id='modals.signmessage.firststep.sign'
-              defaultMessage='Sign'
-            />
+            <FormattedMessage id='modals.signmessage.firststep.sign' defaultMessage='Sign' />
           </Button>
         </SubmitRow>
       </FormGroup>
@@ -89,13 +84,11 @@ const FirstStep = props => {
 }
 
 FirstStep.propTypes = {
-  invalid: PropTypes.bool.isRequired,
-  submitting: PropTypes.bool.isRequired,
   address: PropTypes.string.isRequired,
   closeAll: PropTypes.func.isRequired,
-  handleSubmit: PropTypes.func.isRequired
+  handleSubmit: PropTypes.func.isRequired,
+  invalid: PropTypes.bool.isRequired,
+  submitting: PropTypes.bool.isRequired
 }
 
-export default reduxForm({ form: 'signMessage', destroyOnUnmount: false })(
-  FirstStep
-)
+export default reduxForm({ destroyOnUnmount: false, form: 'signMessage' })(FirstStep)

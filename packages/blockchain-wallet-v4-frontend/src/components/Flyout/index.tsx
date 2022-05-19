@@ -1,47 +1,11 @@
 import React, { ReactNode } from 'react'
 import { ModalPropsType } from 'blockchain-wallet-v4-frontend/src/modals/types'
 import { AnimatePresence, motion } from 'framer-motion'
+import { equals } from 'ramda'
 import styled from 'styled-components'
 
 import { Modal, Text } from 'blockchain-info-components'
 import { media } from 'services/styles'
-
-// Brokerage specific flyout screens
-import OrderSummary from './Brokerage/OrderSummary'
-import FlyoutContainer from './Container'
-import FlyoutContent from './Content'
-import FlyoutFooter from './Footer'
-import FlyoutHeader from './Header'
-// Interest Upload Documents specific layout screens
-import AdditionalInformation from './InterestUploadDocuments/AdditionalInformation'
-import GetStarted from './InterestUploadDocuments/GetStarted'
-import UploadAndVerify from './InterestUploadDocuments/UploadAndVerify'
-import Uploaded from './InterestUploadDocuments/Uploaded'
-// Recurring Buy specific flyout screens
-import FrequencyScreen from './RecurringBuy/FrequencyScreen'
-import RecurringBuyGettingStarted from './RecurringBuy/GettingStarted'
-import RecurringBuyDetails from './RecurringBuy/RecurringBuyDetails'
-import RecurringBuyRemoveConfirm from './RecurringBuy/RecurringBuyRemoveConfirm'
-// These are the newest versions of flyout layouts and should eventually replace/integrate FlyoutWrapper etc.
-import FlyoutSubHeader from './SubHeader'
-
-export * from './model'
-export {
-  AdditionalInformation,
-  FlyoutContainer,
-  FlyoutContent,
-  FlyoutFooter,
-  FlyoutHeader,
-  FlyoutSubHeader,
-  FrequencyScreen,
-  GetStarted,
-  OrderSummary,
-  RecurringBuyDetails,
-  RecurringBuyGettingStarted,
-  RecurringBuyRemoveConfirm,
-  UploadAndVerify,
-  Uploaded
-}
 
 export const duration = 500
 export const slide = 500
@@ -50,7 +14,7 @@ export const width = 480
 const AnimatedModal = motion(Modal)
 
 const FlyoutModal = styled(AnimatedModal)`
-  border-radius: 0px;
+  border-radius: 0;
   overflow: auto;
   position: absolute;
   top: 0;
@@ -60,7 +24,6 @@ const FlyoutModal = styled(AnimatedModal)`
   color: ${(props) => props.theme.grey700};
   ${media.mobile`
     width: 100%;
-    height: calc(100vh - 80px);
     padding-bottom: 20px;
   `};
 `
@@ -141,39 +104,42 @@ export const AmountFieldContainer = styled.div<{ isCrypto?: boolean }>`
   }
 `
 
-export const StickyHeaderFlyoutWrapper = styled(FlyoutWrapper)`
-  background-color: ${(props) => props.theme.white};
-  position: sticky;
-  top: 0;
-  z-index: 99;
-`
+class Flyout extends React.Component<Props> {
+  shouldComponentUpdate = (nextProps) => !equals(this.props, nextProps)
 
-const Flyout = ({ children, isOpen, ...props }: Props) => {
-  return (
-    <AnimatePresence>
-      {isOpen && !props.userClickedOutside ? (
-        <FlyoutModal
-          transition={{
-            bounce: 0,
-            type: 'spring'
-          }}
-          initial={{ x: width }}
-          animate={{ x: 0 }}
-          exit={{ x: width }}
-          {...props}
-        >
-          <FlyoutChildren>
-            {/* Each child must be wrapped in FlyoutChild for transitioning to work */}
-            {children}
-          </FlyoutChildren>
-        </FlyoutModal>
-      ) : null}
-    </AnimatePresence>
-  )
+  render() {
+    const { children, doNotHide, isOpen, userClickedOutside } = this.props
+
+    return (
+      <AnimatePresence>
+        {isOpen && !userClickedOutside ? (
+          <FlyoutModal
+            doNotHide={doNotHide}
+            total={this.props.total}
+            position={this.props.position}
+            animate={{ x: 0 }}
+            exit={{ x: width }}
+            initial={{ x: width }}
+            transition={{
+              bounce: 0,
+              duration: duration / 1000,
+              type: 'spring'
+            }}
+          >
+            <FlyoutChildren>
+              {/* Each child must be wrapped in FlyoutChild for transitioning to work */}
+              {children}
+            </FlyoutChildren>
+          </FlyoutModal>
+        ) : null}
+      </AnimatePresence>
+    )
+  }
 }
 
 type Props = Omit<ModalPropsType, 'close'> & {
   children: ReactNode
+  doNotHide?: boolean
   isOpen: boolean
   onClose: () => void
 }

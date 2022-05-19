@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { FormattedMessage } from 'react-intl'
 
 import { fiatToString } from '@core/exchange/utils'
-import { FiatSBAndSwapTransactionType } from '@core/types'
+import { FiatBSAndSwapTransactionType } from '@core/types'
 import { Text } from 'blockchain-info-components'
 import { convertBaseToStandard } from 'data/components/exchange/services'
 
@@ -34,7 +34,7 @@ const CustodialTxListItem: React.FC<Props> = (props) => {
           <IconTx {...props} />
           <StatusAndType data-e2e='orderStatusColumn'>
             <Text size='16px' color='grey800' weight={600} data-e2e='txTypeText'>
-              <TransactionType {...props} /> {tx.amount.symbol}
+              <TransactionType {...props} /> {coinfig.displaySymbol}
             </Text>
             <Timestamp {...props} />
           </StatusAndType>
@@ -134,7 +134,7 @@ const CustodialTxListItem: React.FC<Props> = (props) => {
 }
 
 export type Props = OwnProps & {
-  tx: FiatSBAndSwapTransactionType
+  tx: FiatBSAndSwapTransactionType
 }
 
 export default CustodialTxListItem

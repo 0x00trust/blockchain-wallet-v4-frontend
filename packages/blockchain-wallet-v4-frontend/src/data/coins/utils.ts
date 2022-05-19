@@ -1,10 +1,22 @@
-import { CoinType, InterestBalanceType, SBBalanceType } from '@core/types'
+import { BSBalanceType, CoinType, InterestBalanceType } from '@core/types'
 import { convertStandardToBase } from 'data/components/exchange/services'
-import { SwapAccountType, SwapBaseCounterTypes } from 'data/components/types'
+import { SwapAccountType, SwapBaseCounterTypes } from 'data/types'
+
+export const generateSelfCustodyAccount = (coin: CoinType, balance: string): SwapAccountType[] => {
+  return [
+    {
+      balance,
+      baseCoin: coin,
+      coin,
+      label: 'Private Key Wallet',
+      type: SwapBaseCounterTypes.ACCOUNT
+    }
+  ]
+}
 
 export const generateTradingAccount = (
   coin: CoinType,
-  sbBalance?: SBBalanceType
+  sbBalance?: BSBalanceType
 ): SwapAccountType[] => {
   const { coinfig } = window.coins[coin]
   return [
@@ -28,7 +40,7 @@ export const generateInterestAccount = (
       balance: interestBalance?.balance || '0',
       baseCoin: coinfig.type.erc20Address ? 'ETH' : (coin as SwapAccountType['baseCoin']),
       coin,
-      label: `${coin} Interest Account`,
+      label: `${coin} Rewards Account`,
       // @ts-ignore
       type: 'INTEREST'
     }

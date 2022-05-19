@@ -1,4 +1,10 @@
+import { createSelector } from '@reduxjs/toolkit'
+
+import { Remote } from '@core'
+import { selectors } from 'data'
 import { RootState } from 'data/rootReducer'
+
+import { DEFAULT_BS_BALANCE } from '../buySell/model'
 
 export const getBankCredentials = (state: RootState) => state.components.brokerage.bankCredentials
 
@@ -21,3 +27,20 @@ export const getAddBankStatus = (state: RootState) => state.components.brokerage
 export const getFiatCurrency = (state: RootState) => state.components.brokerage.fiatCurrency
 
 export const getIsFlow = (state: RootState) => state.components.brokerage.isFlow
+
+export const getCrossBorderLimits = (state: RootState) =>
+  state.components.brokerage.crossBorderLimits
+
+export const getWithdrawableBalance = createSelector(
+  (state: RootState) => selectors.components.buySell.getBSBalances(state),
+  (state: RootState) => selectors.modules.profile.getUserCurrencies(state),
+  (sbBalancesR, userCurrencies) => {
+    const { defaultWalletCurrency } = userCurrencies
+
+    return Remote.of(
+      sbBalancesR.getOrElse({
+        [defaultWalletCurrency]: DEFAULT_BS_BALANCE
+      })[defaultWalletCurrency]?.withdrawable || '0'
+    )
+  }
+)

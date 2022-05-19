@@ -4,9 +4,11 @@ import { connect, ConnectedProps } from 'react-redux'
 import { Dispatch } from 'redux'
 import styled from 'styled-components'
 
-import { Button, Image, Text } from 'blockchain-info-components'
+import { Image, Text } from 'blockchain-info-components'
 import { actions } from 'data'
 import { media } from 'services/styles'
+
+import { BannerButton } from '../styles'
 
 const Wrapper = styled.div`
   display: flex;
@@ -58,14 +60,6 @@ const Copy = styled(Text)`
     font-size: 14px;
   `}
 `
-const BannerButton = styled(Button)`
-  height: 48px;
-  ${media.mobile`
-    font-size: 14px;
-    margin-top: 16px;
-    padding: 10px;
-  `}
-`
 
 const ContinueToGold = ({ verifyIdentity }: Props) => (
   <Wrapper>
@@ -82,16 +76,16 @@ const ContinueToGold = ({ verifyIdentity }: Props) => (
         </Text>
         <Copy size='16px' color='grey600' weight={500}>
           <FormattedMessage
-            id='scenes.home.banner.continue_to_gold.description'
-            defaultMessage='Continue your verification to become Gold level and increase your limits and payment methods'
+            id='scenes.home.banner.continue_to_full_access.description'
+            defaultMessage='Continue your verification to become full access and increase your limits and payment methods'
           />
         </Copy>
       </Column>
     </Row>
     <BannerButton onClick={verifyIdentity} jumbo data-e2e='continueToGoldSDD' nature='primary'>
       <FormattedMessage
-        id='scenes.home.banner.continue_to_gold.button'
-        defaultMessage='Continue to Gold'
+        id='scenes.home.banner.continue_to_full_access.button'
+        defaultMessage='Continue to Full Access'
       />
     </BannerButton>
   </Wrapper>

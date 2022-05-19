@@ -1,23 +1,21 @@
 import React from 'react'
 
-import { SelectBox } from 'components/Form'
+import SelectBox from 'components/Form/SelectBox'
 
 const elements = [
   {
     group: '',
     items: [
       {
-        value: 'id',
-        text: 'Id'
+        text: 'Id',
+        value: 'id'
       },
       {
-        value: 'text',
-        text: 'Text'
+        text: 'Text',
+        value: 'text'
       }
     ]
   }
 ]
 
-export const SelectBoxMemo = props => (
-  <SelectBox elements={elements} {...props} />
-)
+export const SelectBoxMemo = (props) => <SelectBox elements={elements} {...props} />

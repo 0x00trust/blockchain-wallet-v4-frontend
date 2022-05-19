@@ -1,17 +1,19 @@
 import * as bchTransactions from './bchTransactions/actions'
 import { actions as brokerage } from './brokerage/slice'
 import * as btcTransactions from './btcTransactions/actions'
+import { actions as buySell } from './buySell/slice'
 import * as coinTransactions from './coinTransactions/actions'
+import { actions as debitCard } from './debitCard/slice'
 import * as ethTransactions from './ethTransactions/actions'
 import * as fiatTransactions from './fiatTransactions/actions'
 import * as fundRecovery from './fundRecovery/actions'
-import * as identityVerification from './identityVerification/actions'
+import { actions as identityVerification } from './identityVerification/slice'
 import * as importBtcAddress from './importBtcAddress/actions'
 import { actions as interest } from './interest/slice'
 import { actions as interestUploadDocument } from './interestUploadDocument/slice'
 import { actions as layoutWallet } from './layoutWallet/slice'
-import * as lockbox from './lockbox/actions'
 import * as manageAddresses from './manageAddresses/actions'
+import { actions as nfts } from './nfts/slice'
 import * as onboarding from './onboarding/actions'
 import { actions as priceChart } from './priceChart/slice'
 import * as recoveryPhrase from './recoveryPhrase/actions'
@@ -27,11 +29,13 @@ import * as sendEth from './sendEth/actions'
 import * as sendXlm from './sendXlm/actions'
 import { actions as settings } from './settings/slice'
 import * as signMessage from './signMessage/actions'
-import { actions as buySell } from './simpleBuy/slice'
-import * as swap from './swap/actions'
+import { actions as swap } from './swap/slice'
+import { actions as taxCenter } from './taxCenter/slice'
+import { actions as termsAndConditions } from './termsAndConditions/slice'
 import * as uploadDocuments from './uploadDocuments/actions'
 import * as veriff from './veriff/actions'
-import * as withdraw from './withdraw/actions'
+import { actions as walletConnect } from './walletConnect/slice'
+import { actions as withdraw } from './withdraw/slice'
 import * as xlmTransactions from './xlmTransactions/actions'
 
 export {
@@ -40,6 +44,7 @@ export {
   btcTransactions,
   buySell,
   coinTransactions,
+  debitCard,
   ethTransactions,
   fiatTransactions,
   fundRecovery,
@@ -48,8 +53,8 @@ export {
   interest,
   interestUploadDocument,
   layoutWallet,
-  lockbox,
   manageAddresses,
+  nfts,
   onboarding,
   priceChart,
   recoveryPhrase,
@@ -66,8 +71,11 @@ export {
   settings,
   signMessage,
   swap,
+  taxCenter,
+  termsAndConditions,
   uploadDocuments,
   veriff,
+  walletConnect,
   withdraw,
   xlmTransactions
 }

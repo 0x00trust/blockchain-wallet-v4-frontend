@@ -5,11 +5,10 @@ import { bindActionCreators } from 'redux'
 import styled from 'styled-components'
 
 import { Button, Icon, Text } from 'blockchain-info-components'
-import { FlyoutFooter, FlyoutHeader } from 'components/Flyout'
+import { FlyoutFooter, FlyoutHeader } from 'components/Flyout/Layout'
 import { actions } from 'data'
 
 import AnimatedCarousel from './AnimatedCarousel'
-import AnimatedGraph from './AnimatedGraph'
 
 const Wrapper = styled.div`
   display: flex;
@@ -22,7 +21,6 @@ const MainContent = styled.div`
   flex-direction: column;
   flex: 1;
 `
-
 const Slide = styled.div`
   width: 100%;
   display: flex;
@@ -33,12 +31,10 @@ const Slide = styled.div`
 const SlideStart = styled(Slide)`
   justify-content: center;
 `
-
 const SlideContent = styled.div`
   padding: 0 40px;
   text-align: center;
 `
-
 const SyncIconWrapper = styled.div`
   display: flex;
   justify-content: center;
@@ -49,12 +45,6 @@ const SyncIconWrapper = styled.div`
   border-radius: 20px;
   margin-right: 20px;
   background-color: ${(props) => props.theme.blue100};
-`
-
-const TitleText = styled(Text)`
-  display: flex;
-  flex-direction: row;
-  flex: 1;
 `
 
 class Notifications extends PureComponent<Props, State> {
@@ -93,7 +83,6 @@ class Notifications extends PureComponent<Props, State> {
         </FlyoutHeader>
 
         <MainContent>
-          <AnimatedGraph stepIndex={this.state.stepIndex} />
           <AnimatedCarousel stepChange={this.stepChange}>
             <Slide>
               <SlideContent>

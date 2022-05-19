@@ -6,10 +6,11 @@ import { alertsReducer as alerts } from './alerts/slice'
 import { authReducer as auth } from './auth/slice'
 import { cacheReducer as cache } from './cache/slice'
 import components from './components/reducers'
-import { custodialReducer as custodial } from './custodial/reducers'
+import { custodialReducer as custodial } from './custodial/slice'
 import form from './form/reducers'
 import { goalsReducer as goals } from './goals/slice'
-import { logsReducer as logs } from './logs/slice.js'
+import { logsReducer as logs } from './logs/slice'
+import { miscReducer as misc } from './misc/slice'
 import { modalsReducer } from './modals/reducers'
 import profile from './modules/profile/reducers'
 import rates from './modules/rates/reducers'
@@ -18,6 +19,7 @@ import { transferEthReducer } from './modules/transferEth/reducers'
 import { preferencesReducer } from './preferences/reducers'
 import { pricesReducer as prices } from './prices/slice'
 import { sessionReducer as session } from './session/slice'
+import { signupReducer as signup } from './signup/slice'
 
 const rootReducer = {
   alerts,
@@ -28,6 +30,7 @@ const rootReducer = {
   form,
   goals,
   logs,
+  misc,
   modals: modalsReducer,
   preferences: preferencesReducer,
   prices,
@@ -35,6 +38,7 @@ const rootReducer = {
   rates,
   securityCenter,
   session,
+  signup,
   transferEth: transferEthReducer,
   [paths.dataPath]: coreReducers.data,
   [paths.walletPath]: coreReducers.wallet,

@@ -12,6 +12,20 @@ export const debounce = (func, wait) => {
   }
 }
 
+// React.memo still renders whenever it feels like it so this memoizer
+// gives you more more control to guarentee no unwanted rendering
+export const memoizer = (component) => {
+  const cached = {}
+
+  return function (args) {
+    const key = JSON.stringify(args)
+    if (!cached[key]) {
+      cached[key] = component(args)
+    }
+    return cached[key]
+  }
+}
+
 export const checkHasWebcam = () => {
   const media = navigator.mediaDevices
   if (!prop('enumerateDevices', media)) return Promise.resolve(false)
@@ -55,6 +69,7 @@ export const toBase64 = (file: File): Promise<string> => {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
     reader.readAsDataURL(file)
+    // @ts-ignore
     reader.onload = () => resolve(reader?.result?.toString())
     reader.onerror = (error) => reject(error)
   })

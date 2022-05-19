@@ -3,12 +3,12 @@ import { FormattedMessage } from 'react-intl'
 import { lift, prop, propEq } from 'ramda'
 
 import { coreSelectors } from '@core'
-import { SBBalanceType } from '@core/network/api/simpleBuy/types'
+import { BSBalanceType } from '@core/network/api/buySell/types'
 import { ADDRESS_TYPES } from '@core/redux/payment/btc/utils'
 import { ExtractSuccess } from '@core/remote/types'
 import { createDeepEqualSelector } from '@core/utils'
 import { generateTradingAccount } from 'data/coins/utils'
-import { SwapAccountType } from 'data/components/types'
+import { SwapAccountType } from 'data/types'
 
 import { getTradingBalance } from '..'
 
@@ -85,7 +85,7 @@ export const getAccounts = createDeepEqualSelector(
 
       // add trading accounts if requested
       if (ownProps?.tradingAccounts) {
-        accounts = accounts.concat(generateTradingAccount(coin, sbBalance as SBBalanceType))
+        accounts = accounts.concat(generateTradingAccount(coin, sbBalance as BSBalanceType))
       }
 
       return accounts

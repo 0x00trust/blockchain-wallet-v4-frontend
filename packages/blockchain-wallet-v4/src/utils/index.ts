@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import deepEqual from 'fast-deep-equal'
 import { createSelectorCreator, defaultMemoize } from 'reselect'
 
@@ -12,7 +11,7 @@ const createDeepEqualSelector = createSelectorCreator(defaultMemoize, deepEqual)
 
 export { bch, btc, checks, createDeepEqualSelector, eth, xlm }
 
-export const MISSING_WALLET = 'missing_wallet'
+export const MISSING_WALLET = 'MISSING_WALLET'
 
 export const errorHandler = (e): string => {
   return typeof e === 'object'
@@ -29,3 +28,8 @@ export const errorHandler = (e): string => {
 export const errorHandlerCode = (e) => {
   return typeof e === 'object' && e.code ? e.code : errorHandler(e)
 }
+
+export const errorCodeAndMessage = (e) => ({
+  code: typeof e === 'object' ? Number(e.code) : 1,
+  message: errorHandler(e)
+})

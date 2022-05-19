@@ -4,7 +4,7 @@ import { bindActionCreators, compose } from 'redux'
 import { Field, InjectedFormProps, reduxForm } from 'redux-form'
 import styled from 'styled-components'
 
-import { SelectBoxCoinPriceChart } from 'components/Form'
+import SelectBoxCoinPriceChart from 'components/Form/SelectBoxCoinPriceChart'
 import { actions, selectors } from 'data'
 import { media } from 'services/styles'
 
@@ -45,19 +45,19 @@ const CoinSelector = ({
   )
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = (state) => {
   return {
     priceChart: selectors.preferences.getPriceChart(state)
   }
 }
 
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch) => ({
   actions: bindActionCreators(actions.components.priceChart, dispatch)
 })
 
 const connector = connect(mapStateToProps, mapDispatchToProps)
 
-const enhance = compose<any>(reduxForm({ form: 'priceChartCoin' }), connector)
+const enhance = compose<React.ComponentType>(reduxForm({ form: 'priceChartCoin' }), connector)
 
 type Props = ConnectedProps<typeof connector>
 

@@ -7,15 +7,19 @@ import { actions, selectors } from 'data'
 import { RootState } from 'data/rootReducer'
 import { UserDataType } from 'data/types'
 
+import BSOrderBanner from './BSOrderBanner'
 import BuyCrypto from './BuyCrypto'
+import CoinRename from './CoinRename'
+import CompleteYourProfile from './CompleteYourProfile'
 import ContinueToGold from './ContinueToGold'
 import FinishKyc from './FinishKyc'
 import KycResubmit from './KycResubmit'
 import NewCurrency from './NewCurrency'
 import RecurringBuys from './RecurringBuys'
-import SBOrderBanner from './SBOrderBanner'
 import { getData } from './selectors'
 import ServicePriceUnavailable from './ServicePriceUnavailable'
+import StxAidropFundsAvailable from './StxAirdropFundsAvailable'
+import TaxCenter from './TaxCenter'
 
 const BannerWrapper = styled.div`
   margin-bottom: 25px;
@@ -26,7 +30,11 @@ class Banners extends React.PureComponent<Props> {
     this.props.buySellActions.fetchOrders()
     this.props.buySellActions.fetchSDDEligibility()
     if (this.props.userData.tiers?.current > 0) {
-      // TODO move this away from SB
+      // we need such to distinguish is profile completed
+      this.props.buySellActions.fetchCards(false)
+      this.props.buySellActions.fetchPaymentMethods(this.props.fiatCurrency)
+      this.props.buySellActions.fetchBalance({ skipLoading: true })
+      // TODO move this away from BS
       this.props.buySellActions.fetchLimits(this.props.fiatCurrency)
     }
   }
@@ -53,10 +61,22 @@ class Banners extends React.PureComponent<Props> {
             <ServicePriceUnavailable />
           </BannerWrapper>
         )
+      case 'stxAirdropFundsAvailable':
+        return (
+          <BannerWrapper>
+            <StxAidropFundsAvailable />
+          </BannerWrapper>
+        )
       case 'sbOrder':
         return (
           <BannerWrapper>
-            <SBOrderBanner />
+            <BSOrderBanner />
+          </BannerWrapper>
+        )
+      case 'coinRename':
+        return (
+          <BannerWrapper>
+            <CoinRename />
           </BannerWrapper>
         )
       case 'newCurrency':
@@ -77,10 +97,22 @@ class Banners extends React.PureComponent<Props> {
             <ContinueToGold />
           </BannerWrapper>
         )
+      case 'completeYourProfile':
+        return (
+          <BannerWrapper>
+            <CompleteYourProfile />
+          </BannerWrapper>
+        )
       case 'recurringBuys':
         return (
           <BannerWrapper>
             <RecurringBuys />
+          </BannerWrapper>
+        )
+      case 'taxCenter':
+        return (
+          <BannerWrapper>
+            <TaxCenter />
           </BannerWrapper>
         )
       default:

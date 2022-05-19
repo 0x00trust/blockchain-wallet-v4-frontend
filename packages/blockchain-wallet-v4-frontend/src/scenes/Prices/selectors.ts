@@ -1,44 +1,53 @@
-import BigNumber from 'bignumber.js'
-import { lift, map } from 'ramda'
+import { lift } from 'ramda'
 
-import { getAllCoinsBalancesSelector, getErc20Balance } from 'components/Balances/selectors'
 import { ExtractSuccess } from '@core/types'
 import { createDeepEqualSelector } from '@core/utils'
+import { getBalanceSelector, getErc20Balance } from 'components/Balances/selectors'
 import { selectors } from 'data'
 
 export const getData = createDeepEqualSelector(
   [
     selectors.prices.getAllCoinPrices,
     selectors.prices.getAllCoinPricesPreviousDay,
-    getAllCoinsBalancesSelector,
     (state) => state
   ],
-  (coinPricesR, coinPricesPreviousR, coinBalances, state) => {
+  (coinPricesR, coinPricesPreviousR, state) => {
     const transform = (
       coinPrices: ExtractSuccess<typeof coinPricesR>,
       coinPricesPrevious: ExtractSuccess<typeof coinPricesPreviousR>
     ) => {
-      const cryptos = selectors.components.swap.getCoins()
-
-      return map((coin: string) => {
+      const coinList = selectors.core.data.coins.getAllCoins()
+      const coinPricesList = coinList.map((coin: string) => {
         const { coinfig } = window.coins[coin]
+        const currentPrice = coinPrices[coinfig.symbol]?.price
+        const yesterdayPrice = coinPricesPrevious[coinfig.symbol]?.price
+        // some market caps returned as null
+        const marketCap = coinPrices[coinfig.symbol]?.marketCap
+          ? coinPrices[coinfig.symbol]?.marketCap
+          : 0
+        const coinBalance = getBalanceSelector(coinfig.symbol)(state).getOrElse(0).valueOf()
+        const priceChangeNum = Number(((currentPrice - yesterdayPrice) / yesterdayPrice) * 100)
+        const priceChangeStr = Number.isNaN(priceChangeNum) ? '0' : priceChangeNum.toPrecision(2)
 
-        const currentPrice = coinPrices[coinfig.symbol]
-        const yesterdayPrice = coinPricesPrevious[coinfig.symbol]
-        return (
-          coinfig.type.name !== 'FIAT' && {
-            balance:
-              coinBalances[coinfig.symbol] || getErc20Balance(coinfig.symbol)(state).getOrElse(0),
-            coin: coinfig.symbol,
-            coinModel: coin,
-            name: `${coinfig.name} (${coinfig.displaySymbol})`,
-            price: currentPrice,
-            priceChange: Number(
-              ((currentPrice - yesterdayPrice) / yesterdayPrice) * 100
-            ).toPrecision(2)
-          }
-        )
-      }, cryptos)
+        return {
+          balance:
+            coinfig.type.name === 'ERC20'
+              ? getErc20Balance(coinfig.symbol)(state).getOrElse(0)
+              : coinBalance,
+          coin: coinfig.symbol,
+          coinModel: coin,
+          marketCap,
+          name: `${coinfig.name} (${coinfig.displaySymbol})`,
+          price: currentPrice,
+          priceChange: priceChangeStr,
+          products: coinfig.products
+        }
+      })
+
+      // filter out undefined coins, zero value coins and coins with inflated marketcaps
+      return coinPricesList?.filter((coin) => {
+        return coin.price && coin.price !== 0 && coin.coin !== 'HOKK'
+      })
     }
 
     return lift(transform)(coinPricesR, coinPricesPreviousR)

@@ -1,8 +1,9 @@
 import { createSelector } from '@reduxjs/toolkit'
 import { compose, flatten, uniq } from 'ramda'
 
-import { SBPaymentMethodType, SBPaymentTypes } from '@core/types'
+import { BSPaymentMethodType, BSPaymentTypes } from '@core/types'
 import { RootState } from 'data/rootReducer'
+import { buyPaymentMethodSelectedPaymentTypeDictionary } from 'middleware/analyticsMiddleware/utils'
 
 import { getPayment } from '../interest/selectors'
 import { RecurringBuyPeriods } from './types'
@@ -18,12 +19,18 @@ export const getPaymentInfoPeriod = (period: RecurringBuyPeriods) =>
     return paymentInfoR.getOrElse([]).filter((pi) => pi.period === period)[0]
   })
 
-export const isAvailableMethod = (period: RecurringBuyPeriods, method?: SBPaymentMethodType) =>
+export const isAvailableMethod = (period: RecurringBuyPeriods, method?: BSPaymentMethodType) =>
   createSelector(getPaymentInfoPeriod(period), (paymentInfoPeriod) => {
     if (!method) return false
     // All periods support ONE_TIME buys
     if (period === RecurringBuyPeriods.ONE_TIME) return true
-    return (paymentInfoPeriod && paymentInfoPeriod.eligibleMethods.includes(method.type)) || false
+    // Card type can be PAYMENT_CARD or USER_CARD, but backend doesn't support USER_CARD
+    // for recurring buy eligible payment methods. We may want to refactor cards code to
+    // remove the need for USER_CARD
+    const methodType = buyPaymentMethodSelectedPaymentTypeDictionary(
+      method.type
+    ) as unknown as BSPaymentTypes
+    return (paymentInfoPeriod && paymentInfoPeriod.eligibleMethods.includes(methodType)) || false
   })
 
 export const availableMethods = createSelector(getPaymentInfo, (paymentInfoR) => {
@@ -35,12 +42,15 @@ export const availableMethods = createSelector(getPaymentInfo, (paymentInfoR) =>
   return uniq(flatten(data))
 })
 
-export const hasAvailablePeriods = (method?: SBPaymentMethodType) =>
+export const hasAvailablePeriods = (method?: BSPaymentMethodType) =>
   createSelector(getPaymentInfo, (paymentInfoR) => {
     if (!method) return false
 
     const paymentInfo = paymentInfoR.getOrElse([]).filter((pi) => {
-      return pi.eligibleMethods.includes(method.type)
+      const methodType = buyPaymentMethodSelectedPaymentTypeDictionary(
+        method.type
+      ) as unknown as BSPaymentTypes
+      return pi.eligibleMethods.includes(methodType)
     })
 
     return paymentInfo.length > 0

@@ -99,18 +99,26 @@ export type BtcAccountType = {
   xpub: string
 }
 
+export enum WalletAccountEnum {
+  CUSTODIAL = 'CUSTODIAL',
+  NON_CUSTODIAL = 'NON_CUSTODIAL'
+}
+
+export type WalletAccountType = keyof typeof WalletAccountEnum
+
 export type HDDerivationType = 'bech32' | 'legacy'
 
 export type AccountTypes = BtcAccountType
 
 export * from '../coinSelection/types'
 export * from '../exchange/currencies'
+export * from '../network/api/buySell/types'
 export * from '../network/api/custodial/types'
 export * from '../network/api/eth/types'
 export * from '../network/api/interest/types'
 export * from '../network/api/kyc/types'
 export * from '../network/api/misc/types'
-export * from '../network/api/simpleBuy/types'
+export * from '../network/api/profile/types'
 export * from '../network/api/swap/types'
 export * from '../network/types'
 export * from '../redux/data/custodial/types'
@@ -120,5 +128,4 @@ export * from '../redux/settings/types'
 export * from '../redux/walletOptions/types'
 export * from '../remote/types'
 export * from '../transactions/types'
-export * from './index'
 export * from './WalletPayload'

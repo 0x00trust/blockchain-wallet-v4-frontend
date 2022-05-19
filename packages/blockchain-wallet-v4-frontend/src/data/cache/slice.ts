@@ -5,10 +5,15 @@ const initialState = {
   channelChannelId: undefined,
   channelPhonePubkey: undefined,
   channelPrivKey: undefined,
+  exchangeEmail: undefined,
+  exchangeWalletGuid: undefined,
   guidStored: undefined,
+  hasCloudBackup: undefined,
   lastEmail: undefined,
   lastGuid: undefined,
-  mobileConnected: undefined
+  lastLogoutTimestamp: undefined,
+  mobileConnected: undefined,
+  unifiedAccount: undefined
 }
 
 const cacheSlice = createSlice({
@@ -16,12 +21,12 @@ const cacheSlice = createSlice({
   name: 'cache',
   reducers: {
     announcementDismissed: (state, action) => {
-      state.announcements[action.payload].dismissed = true
+      state.announcements[action.payload] = { dismissed: true }
     },
     announcementToggled: (state, action) => {
       const { collapsed, id } = action.payload
 
-      state.announcements[id].collapsed = collapsed
+      state.announcements[id] = { ...state.announcements[id], collapsed }
     },
     channelChannelIdCreated: (state, action) => {
       state.channelChannelId = action.payload
@@ -38,20 +43,52 @@ const cacheSlice = createSlice({
     emailStored: (state, action) => {
       state.lastEmail = action.payload
     },
+    exchangeEmail: (state, action) => {
+      state.exchangeEmail = action.payload
+    },
+    exchangeWalletGuid: (state, action) => {
+      state.exchangeWalletGuid = action.payload
+    },
     guidEntered: (state, action) => {
       state.lastGuid = action.payload
     },
     guidStored: (state, action) => {
       state.guidStored = action.payload
     },
+    hasCloudBackup: (state, action) => {
+      state.hasCloudBackup = action.payload
+    },
+    lastLogoutTimestamp: (state, action) => {
+      state.lastLogoutTimestamp = action.payload
+    },
     mobileConnectedStored: (state, action) => {
       state.mobileConnected = action.payload
     },
-    removedStoredLogin: (state) => {
+    removeExchangeLogin: (state) => {
+      state.exchangeEmail = undefined
+      state.exchangeWalletGuid = undefined
+      state.unifiedAccount = undefined
+    },
+    removeStoredLogin: (state) => {
+      state.exchangeEmail = undefined
+      state.exchangeWalletGuid = undefined
       state.guidStored = undefined
       state.lastEmail = undefined
       state.lastGuid = undefined
       state.mobileConnected = undefined
+      state.hasCloudBackup = undefined
+      state.unifiedAccount = undefined
+    },
+    removeWalletLogin: (state) => {
+      state.guidStored = undefined
+      state.lastEmail = undefined
+      state.lastGuid = undefined
+      state.mobileConnected = undefined
+      state.hasCloudBackup = undefined
+      state.unifiedAccount = undefined
+    },
+    setUnifiedAccount: (state, action) => {
+      state.unifiedAccount = action.payload
     }
   }
 })

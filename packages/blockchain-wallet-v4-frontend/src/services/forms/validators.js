@@ -1,10 +1,6 @@
 import React from 'react'
-import bip39 from 'bip39'
 import { isValidBIC, isValidIBAN } from 'ibantools'
-import { isValidNumber } from 'libphonenumber-js'
-import { validate } from 'postal-codes-js'
-import postalCodes from 'postal-codes-js/generated/postal-codes-alpha2'
-import { all, any, equals, gt, path, prop, propOr } from 'ramda'
+import { all, any, equals, gt, prop, propOr } from 'ramda'
 
 import { utils } from '@core'
 import { model } from 'data'
@@ -18,7 +14,8 @@ import {
   isNumeric,
   isOverEighteen,
   isSSN,
-  isUsZipcode
+  isUsZipcode,
+  isValidSSN
 } from './utils'
 import * as M from './validationMessages'
 
@@ -32,12 +29,14 @@ export const required = (value) => (value ? undefined : <M.RequiredMessage />)
 
 export const requiredNoErrorText = (value) => (value ? undefined : true)
 
-export const maxValue = (max, canEqual = false) => (value) =>
-  value && gt(value, max) ? (
-    <M.ValueOverMaxMessage />
-  ) : !canEqual && value && +value === max ? (
-    <M.ValueIsEqualToMaxMessage />
-  ) : undefined
+export const maxValue =
+  (max, canEqual = false) =>
+  (value) =>
+    value && gt(value, max) ? (
+      <M.ValueOverMaxMessage />
+    ) : !canEqual && value && +value === max ? (
+      <M.ValueIsEqualToMaxMessage />
+    ) : undefined
 
 export const optional = (validator) => (value) =>
   value === undefined || value === '' ? undefined : validator(value)
@@ -54,24 +53,33 @@ export const validEmail = (value) => (isEmail(value) ? undefined : <M.InvalidEma
 export const validEmailNotAllowed = (value) =>
   isEmail(value) ? <M.ValidEmailNotAllowed /> : undefined
 
-export const validMnemonic = (value) =>
-  bip39.validateMnemonic(value) ? undefined : <M.InvalidPassphraseMessage />
-
 // TODO SSO: remove with new flow
 export const validWalletId = (value) => (isGuid(value) ? undefined : <M.InvalidWalletIdMessage />)
 
 export const validWalletIdOrEmail = (value) =>
   isGuid(value) || isEmail(value) ? undefined : <M.InvalidWalletIdorEmailMessage />
 
-export const validMobileNumber = (value) =>
-  isValidNumber(value) ? undefined : <M.InvalidMobileNumberMessage />
-
 export const validIpList = (ipList) => {
   return !ipList || all(isIpValid)(ipList.split(',')) ? undefined : <M.InvalidIpListMessage />
 }
 
+export const stringContainsLowercaseLetter = (value) =>
+  value && new RegExp('(?=.*[a-z])').test(value)
+export const stringContainsUppercaseLetter = (value) =>
+  value && new RegExp('(?=.*[A-Z])').test(value)
+export const stringContainsNumber = (value) => value && new RegExp('(?=.*[0-9])').test(value)
+export const stringLengthBetween = (value, min, max) =>
+  value && value.length >= min && value.length <= max
+export const stringContainsSpecialChar = (value) =>
+  value && new RegExp('(?=.*[+!@#$%^&*_(){}|"\':;<>,.~`])').test(value)
+
 export const validStrongPassword = (value) => {
-  return value !== undefined && window.zxcvbn && window.zxcvbn(value).score > 1 ? undefined : (
+  return value !== undefined &&
+    stringContainsLowercaseLetter(value) &&
+    stringContainsUppercaseLetter(value) &&
+    stringContainsNumber(value) &&
+    stringLengthBetween(value, 12, 64) &&
+    stringContainsSpecialChar(value) ? undefined : (
     <M.InvalidStrongPassword />
   )
 }
@@ -149,6 +157,11 @@ export const validBchAddress = (value, allValues, props) => {
 export const validEmailCode = (value) =>
   isAlphaNumeric(value) ? undefined : <M.InvalidEmailCodeMessage />
 
+export const validDecliningPrice = (value, allValues, props) =>
+  props.values.ending && props.values.starting && props.values.ending > props.values.starting ? (
+    <M.InvalidDecliningPrice />
+  ) : undefined
+
 export const validBtcPrivateKey = (value, allValues, props) =>
   utils.btc.isValidBtcPrivateKey(value, props.network) ? undefined : (
     <M.InvalidBtcPrivateKeyMessage />
@@ -172,24 +185,15 @@ export const ageOverEighteen = (value) =>
 
 export const requiredSSN = (value) => (isSSN(value) ? undefined : <M.RequiredSSNMessage />)
 
+export const requiredValidSSN = (value) =>
+  isValidSSN(value) ? undefined : <M.RequiredSSNMessage />
+
 export const requiredDOB = (value) => (isDOB(value) ? undefined : <M.RequiredDOBMessage />)
 
 export const requiredUsZipcode = (value) =>
   isUsZipcode(value) ? undefined : <M.RequiredUSZipCodeMessage />
 
-export const countryUsesPostalCode = (countryCode) => {
-  return path([countryCode, 'postalCodeFormat'], postalCodes)
-}
-
 export const countryUsesZipcode = (countryCode) => countryCode === 'US'
-
-export const requiredZipCode = (value, allVals) => {
-  const countryCode = path(['country', 'code'], allVals) || path(['country'], allVals)
-  if (!path([countryCode, 'postalCodeFormat'], postalCodes)) return undefined
-  if (!value) return <M.RequiredMessage />
-
-  return validate(countryCode, value) === true ? undefined : <M.InvalidZipCodeMessage />
-}
 
 export const requireUniqueDeviceName = (value, usedDeviceNames) => {
   return any(equals(value))(usedDeviceNames) ? <M.UniqueDeviceName /> : undefined

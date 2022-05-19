@@ -1,24 +1,23 @@
 import React from 'react'
 import { FormattedMessage } from 'react-intl'
-import Bowser from 'bowser'
 import PropTypes from 'prop-types'
+import { isEmpty } from 'ramda'
 import { Field, reduxForm } from 'redux-form'
 import styled from 'styled-components'
 
-import { Banner, Button, Image, Text, TooltipHost, TooltipIcon } from 'blockchain-info-components'
+import { Button, Image, Text, TooltipHost, TooltipIcon } from 'blockchain-info-components'
 import ComboDisplay from 'components/Display/ComboDisplay'
-import {
-  CountdownTimer,
-  FiatConverter,
-  Form,
-  FormGroup,
-  FormItem,
-  FormLabel,
-  SelectBoxBchAddresses,
-  SelectBoxCoin,
-  TextAreaDebounced,
-  TextBox
-} from 'components/Form'
+import UpgradeToGoldBanner from 'components/Flyout/Banners/UpgradeToGold'
+import CountdownTimer from 'components/Form/CountdownTimer'
+import FiatConverter from 'components/Form/FiatConverter'
+import Form from 'components/Form/Form'
+import FormGroup from 'components/Form/FormGroup'
+import FormItem from 'components/Form/FormItem'
+import FormLabel from 'components/Form/FormLabel'
+import SelectBoxBchAddresses from 'components/Form/SelectBoxBchAddresses'
+import SelectBoxCoin from 'components/Form/SelectBoxCoin'
+import TextAreaDebounced from 'components/Form/TextAreaDebounced'
+import TextBox from 'components/Form/TextBox'
 import QRCodeCapture from 'components/QRCode/Capture'
 import { CustodyToAccountMessage, Row } from 'components/Send'
 import MnemonicRequiredForCustodySend from 'components/Send/RecoveryPhrase'
@@ -26,12 +25,15 @@ import UnstoppableDomains from 'components/UnstoppableDomains'
 import { model } from 'data'
 import { required, validBchAddress } from 'services/forms'
 
-import { insufficientFunds, invalidAmount, maximumAmount, shouldError } from './validation'
+import { TIER_TYPES } from '../../../Settings/TradingLimits/model'
+import {
+  insufficientFunds,
+  invalidAmount,
+  isSendLimitOver,
+  maximumAmount,
+  shouldError
+} from './validation'
 
-const WarningBanners = styled(Banner)`
-  margin: -6px 0 12px;
-  padding: 8px;
-`
 const SubmitFormGroup = styled(FormGroup)`
   margin-top: 16px;
 `
@@ -53,9 +55,7 @@ const ImageInInputContainer = styled.div`
 
 const FirstStep = (props) => {
   const {
-    amount,
     excludeHDWallets,
-    excludeLockbox,
     from,
     handleBitPayInvoiceExpiration,
     handleSubmit,
@@ -63,15 +63,13 @@ const FirstStep = (props) => {
     isMnemonicVerified,
     payPro,
     pristine,
+    sendLimits,
     submitting,
-    totalFee
+    totalFee,
+    verifyIdentity
   } = props
   const isPayPro = !!payPro
-  const isFromLockbox = from && from.type === 'LOCKBOX'
   const isFromCustody = from && from.type === 'CUSTODIAL'
-  const browser = Bowser.getParser(window.navigator.userAgent)
-  const isBrowserSupported = browser.satisfies(model.components.lockbox.supportedBrowsers)
-  const disableLockboxSend = isFromLockbox && !isBrowserSupported
   const disableCustodySend = isFromCustody && !isMnemonicVerified
 
   return (
@@ -94,31 +92,13 @@ const FirstStep = (props) => {
             validate={[required]}
             component={SelectBoxBchAddresses}
             excludeHDWallets={excludeHDWallets}
-            excludeLockbox={excludeLockbox}
             includeCustodial
           />
         </FormItem>
       </FormGroup>
-      {isFromLockbox && !disableLockboxSend && (
-        <WarningBanners type='info'>
-          <Text color='warning' size='13px'>
-            <FormattedMessage
-              id='modals.sendbch.firststep.lockboxwarn'
-              defaultMessage='You will need to connect your Lockbox to complete this transaction.'
-            />
-          </Text>
-        </WarningBanners>
-      )}
-      {disableLockboxSend && (
-        <WarningBanners type='warning'>
-          <Text color='warning' size='12px'>
-            <FormattedMessage
-              id='modals.sendbch.firststep.blockbrowser'
-              defaultMessage='Sending Bitcoin Cash from Lockbox can only be done while using the Brave, Chrome, Firefox or Opera browsers.'
-            />
-          </Text>
-        </WarningBanners>
-      )}
+      <FormGroup>
+        <CustodyToAccountMessage coin='BCH' account={from} />
+      </FormGroup>
       <FormGroup margin='15px'>
         <FormItem>
           <FormLabel htmlFor='to'>
@@ -167,9 +147,6 @@ const FirstStep = (props) => {
         </FormItem>
       </FormGroup>
       <UnstoppableDomains form={model.components.sendBch.FORM} />
-      <FormGroup>
-        <CustodyToAccountMessage coin='BCH' account={from} amount={amount} />
-      </FormGroup>
       <FormGroup margin='15px'>
         <FormItem>
           <FormLabel htmlFor='amount'>
@@ -178,10 +155,11 @@ const FirstStep = (props) => {
           <Field
             name='amount'
             component={FiatConverter}
-            validate={[required, invalidAmount, insufficientFunds, maximumAmount]}
+            validate={[required, invalidAmount, insufficientFunds, maximumAmount, isSendLimitOver]}
             coin='BCH'
             marginTop='8px'
             data-e2e='sendBch'
+            errorBottom
             disabled={isPayPro}
           />
         </FormItem>
@@ -244,19 +222,18 @@ const FirstStep = (props) => {
         </Text>
       )}
       {isFromCustody && !isMnemonicVerified ? <MnemonicRequiredForCustodySend /> : null}
+      {isFromCustody &&
+      !isEmpty(sendLimits) &&
+      sendLimits?.suggestedUpgrade?.requiredTier === TIER_TYPES.GOLD ? (
+        <UpgradeToGoldBanner limits={sendLimits} verifyIdentity={verifyIdentity} />
+      ) : null}
       <SubmitFormGroup>
         <Button
           type='submit'
           nature='primary'
           height='56px'
           size='18px'
-          disabled={
-            submitting ||
-            invalid ||
-            disableLockboxSend ||
-            disableCustodySend ||
-            (!isPayPro && pristine)
-          }
+          disabled={submitting || invalid || disableCustodySend || (!isPayPro && pristine)}
           data-e2e='bchSendContinue'
         >
           <FormattedMessage id='buttons.continue' defaultMessage='Continue' />

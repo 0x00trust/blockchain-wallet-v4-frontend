@@ -63,7 +63,7 @@ const Uploaded = ({ close }: Props) => {
           </TextContentWrapper>
         </InfoContent>
       </Content>
-      <Footer>
+      <Footer collapsed>
         <Button
           nature='primary'
           data-e2e='additionalInfoUploadDocument'
@@ -73,7 +73,7 @@ const Uploaded = ({ close }: Props) => {
           style={{ marginTop: '16px' }}
           onClick={closeModal}
         >
-          <FormattedMessage id='button.ok' defaultMessage='OK' />
+          <FormattedMessage id='buttons.ok' defaultMessage='OK' />
         </Button>
       </Footer>
     </Container>

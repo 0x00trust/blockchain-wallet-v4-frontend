@@ -7,7 +7,7 @@ import DataError from 'components/DataError'
 import { actions, model, selectors } from 'data'
 import { CountryType } from 'data/components/identityVerification/types'
 import { RootState } from 'data/rootReducer'
-import { InfoAndResidentialFormValuesType } from 'data/types'
+import { Analytics, InfoAndResidentialFormValuesType } from 'data/types'
 
 import Loading from '../template.loading'
 import { getData } from './selectors'
@@ -26,11 +26,22 @@ class InfoAndResidential extends PureComponent<Props> {
   }
 
   handleSubmit = () => {
-    const { checkSddEligibility, identityVerificationActions, onCompletionCallback } = this.props
-    identityVerificationActions.saveInfoAndResidentialData(
+    const {
+      analyticsActions,
+      checkSddEligibility,
+      identityVerificationActions,
+      onCompletionCallback
+    } = this.props
+    identityVerificationActions.saveInfoAndResidentialData({
       checkSddEligibility,
       onCompletionCallback
-    )
+    })
+    analyticsActions.trackEvent({
+      key: Analytics.ONBOARDING_PERSONAL_INFORMATION_ENTERED,
+      properties: {
+        origin: 'SETTINGS'
+      }
+    })
   }
 
   onCountryChange = (e, value) => {
@@ -72,6 +83,7 @@ const mapStateToProps = (state: RootState) => ({
 })
 
 const mapDispatchToProps = (dispatch) => ({
+  analyticsActions: bindActionCreators(actions.analytics, dispatch),
   formActions: bindActionCreators(actions.form, dispatch),
   identityVerificationActions: bindActionCreators(actions.components.identityVerification, dispatch)
 })

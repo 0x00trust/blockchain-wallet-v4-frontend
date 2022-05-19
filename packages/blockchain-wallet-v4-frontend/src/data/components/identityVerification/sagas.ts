@@ -2,21 +2,20 @@ import { isEmpty, prop, toUpper } from 'ramda'
 import { call, delay, put, select, take } from 'redux-saga/effects'
 
 import { Types } from '@core'
-import { RemoteDataType, SDDVerifiedType } from '@core/types'
+import { ExtraQuestionsType, RemoteDataType, SDDVerifiedType } from '@core/types'
 import { actions, actionTypes, model, selectors } from 'data'
 import { ModalName } from 'data/modals/types'
-import { KycStateType } from 'data/modules/types'
+import { KycStateType } from 'data/types'
 import * as C from 'services/alerts'
 
 import profileSagas from '../../modules/profile/sagas'
-import * as A from './actions'
-import * as AT from './actionTypes'
 import {
   BAD_CODE_ERROR,
   EMAIL_STEPS,
   FLOW_TYPES,
   ID_VERIFICATION_SUBMITTED_FORM,
   INFO_AND_RESIDENTIAL_FORM,
+  KYC_EXTRA_QUESTIONS_FORM,
   PERSONAL_FORM,
   PHONE_EXISTS_ERROR,
   SMS_NUMBER_FORM,
@@ -25,7 +24,8 @@ import {
 } from './model'
 import * as S from './selectors'
 import computeSteps from './services'
-import { StateType, StepsType } from './types'
+import { actions as A } from './slice'
+import { EmailSmsStepType, StateType, STEPS, StepsType } from './types'
 
 export const logLocation = 'components/identityVerification/sagas'
 export const invalidNumberError = 'Failed to update mobile number'
@@ -79,7 +79,7 @@ export default ({ api, coreSagas, networks }) => {
     try {
       yield put(actions.form.startSubmit(ID_VERIFICATION_SUBMITTED_FORM))
       yield put(actions.modules.profile.setCampaign({ name: campaign }))
-      yield put(A.registerUserCampaign(false))
+      yield put(A.registerUserCampaign({ newUser: false }))
       // Buffer for tagging user
       const wallet = yield select(selectors.core.wallet.getWallet)
       if (Types.Wallet.isDoubleEncrypted(wallet)) {
@@ -182,7 +182,7 @@ export default ({ api, coreSagas, networks }) => {
 
   const initializeVerification = function* ({ payload }) {
     const { tier = TIERS[2], needMoreInfo = false } = payload
-    yield put(A.setEmailStep(EMAIL_STEPS.edit))
+    yield put(A.setEmailStep(STEPS.edit as EmailSmsStepType))
     yield call(defineSteps, tier, needMoreInfo)
     yield call(initializeStep)
   }
@@ -222,7 +222,7 @@ export default ({ api, coreSagas, networks }) => {
       const { smsNumber } = yield select(selectors.form.getFormValues(SMS_NUMBER_FORM))
       yield put(actions.form.startSubmit(SMS_NUMBER_FORM))
       yield call(coreSagas.settings.setMobile, { mobile: smsNumber })
-      yield put(A.setSmsStep(SMS_STEPS.verify))
+      yield put(A.setSmsStep(STEPS.verify as EmailSmsStepType))
       yield put(actions.form.stopSubmit(SMS_NUMBER_FORM))
     } catch (e) {
       yield put(
@@ -323,7 +323,7 @@ export default ({ api, coreSagas, networks }) => {
       try {
         const preIdvData = yield call(api.fetchPreIdvData)
         yield put(A.setPreIdvDataSuccess(preIdvData))
-        yield take(AT.PRE_IDV_CHECK_FINISHED)
+        yield take(A.preIdvCheckFinished)
       } catch (e) {
         yield put(A.setPreIdvDataFailure(e))
       }
@@ -331,17 +331,17 @@ export default ({ api, coreSagas, networks }) => {
       const type = FLOW_TYPES[toUpper(flowType)]
       if (!type) throw wrongFlowTypeError
 
-      yield put(A.setKycFlowSuccess({ flowType }))
+      yield put(A.setKycFlowSuccess(flowType))
     } catch (e) {
       yield put(A.setKycFlowFailure(e))
     }
   }
 
-  const sendDeeplink = function* () {
+  const sendDeepLink = function* () {
     try {
-      yield call(api.sendDeeplink)
+      yield call(api.sendDeepLink)
     } catch (e) {
-      yield put(actions.logs.logErrorMessage(logLocation, 'sendDeeplink', e))
+      yield put(actions.logs.logErrorMessage(logLocation, 'sendDeepLink', e))
     }
   }
 
@@ -349,7 +349,7 @@ export default ({ api, coreSagas, networks }) => {
     try {
       yield put(actions.form.startAsyncValidation(PERSONAL_FORM))
       const { email } = payload
-      yield call(coreSagas.settings.resendVerifyEmail, { email })
+      yield call(coreSagas.settings.resendVerifyEmail, { email }, 'VERIFICATION')
       yield put(actions.alerts.displayInfo(C.VERIFY_EMAIL_SENT))
     } catch (e) {
       yield put(actions.alerts.displayError(C.VERIFY_EMAIL_SENT_ERROR))
@@ -364,10 +364,11 @@ export default ({ api, coreSagas, networks }) => {
       yield put(actions.form.startAsyncValidation(PERSONAL_FORM))
       const prevEmail = (yield select(selectors.core.settings.getEmail)).getOrElse('')
       const { email } = payload
-      if (prevEmail === email) yield call(coreSagas.settings.resendVerifyEmail, { email })
+      if (prevEmail === email)
+        yield call(coreSagas.settings.resendVerifyEmail, { email }, 'VERIFICATION')
       else yield call(coreSagas.settings.setEmail, { email })
       yield put(actions.form.stopAsyncValidation(PERSONAL_FORM))
-      yield put(A.setEmailStep(EMAIL_STEPS.verify))
+      yield put(A.setEmailStep(EMAIL_STEPS.verify as EmailSmsStepType))
     } catch (e) {
       yield put(
         actions.form.stopAsyncValidation(PERSONAL_FORM, {
@@ -385,6 +386,14 @@ export default ({ api, coreSagas, networks }) => {
         yield select(selectors.form.getFormValues(INFO_AND_RESIDENTIAL_FORM))
       const personalData = { dob, firstName, lastName }
 
+      // Should we prompt KYC extra fields
+      yield put(actions.components.identityVerification.fetchExtraKYC())
+      yield take([A.fetchExtraKYCSuccess.type, A.fetchExtraKYCFailure.type])
+      const kycExtraSteps = selectors.components.identityVerification
+        .getKYCExtraSteps(yield select())
+        .getOrElse({} as ExtraQuestionsType)
+      const showExtraKycSteps = kycExtraSteps?.nodes?.length > 0
+
       // in case of US we have to append state with prefix
       const userState = country.code === 'US' ? `US-${state}` : state
       const address = {
@@ -395,6 +404,18 @@ export default ({ api, coreSagas, networks }) => {
         postCode,
         state: userState
       }
+
+      if (showExtraKycSteps && !payload.skipExtraFields) {
+        yield put(actions.form.stopSubmit(INFO_AND_RESIDENTIAL_FORM))
+        yield put(
+          actions.modals.showModal(ModalName.KYC_EXTRA_FIELDS_MODAL, {
+            origin: 'KycRequiredStep'
+          })
+        )
+        // prevent progressing in KYC flow
+        return
+      }
+
       yield call(updateUser, { payload: { data: personalData } })
       yield call(updateUserAddress, {
         payload: { address }
@@ -424,12 +445,12 @@ export default ({ api, coreSagas, networks }) => {
         if (sddVerified.verified) {
           // SDD verified, refetch user profile
           yield put(actions.modules.profile.fetchUser())
-          // run callback to get back to SB flow
+          // run callback to get back to BS flow
           if (payload.onCompletionCallback) {
             payload.onCompletionCallback()
           }
 
-          // wait for SB create to finish
+          // wait for BS create to finish
           yield take([
             actions.components.buySell.fetchOrdersSuccess.type,
             actions.components.buySell.fetchOrdersFailure.type
@@ -439,7 +460,7 @@ export default ({ api, coreSagas, networks }) => {
         } else {
           // SDD denied, continue to veriff
           yield call(goToNextStep)
-          // create SB order in background in case user drops out of veriff flow
+          // create BS order in background in case user drops out of veriff flow
           if (payload.onCompletionCallback) {
             payload.onCompletionCallback()
           }
@@ -466,12 +487,58 @@ export default ({ api, coreSagas, networks }) => {
     }
   }
 
+  const fetchExtraKYC = function* () {
+    try {
+      yield put(A.fetchExtraKYCLoading())
+      const questions = yield call(api.fetchKYCExtraQuestions)
+      yield put(A.fetchExtraKYCSuccess(questions))
+    } catch (e) {
+      yield put(A.fetchExtraKYCFailure(e))
+      actions.logs.logErrorMessage(logLocation, 'fetchExtraKYC', `Error fetching extra KYC: ${e}`)
+    }
+  }
+
+  const saveKYCExtraQuestions = function* () {
+    try {
+      yield put(actions.form.startSubmit(KYC_EXTRA_QUESTIONS_FORM))
+      const extraForm = selectors.components.identityVerification
+        .getKYCExtraSteps(yield select())
+        .getOrElse({} as ExtraQuestionsType)
+
+      yield call(api.updateKYCExtraQuestions, extraForm)
+
+      yield put(actions.form.stopSubmit(KYC_EXTRA_QUESTIONS_FORM))
+      // close modal
+      yield put(actions.modals.closeModal(ModalName.KYC_EXTRA_FIELDS_MODAL))
+      // re-submit info and residential form
+      yield put(
+        actions.components.identityVerification.saveInfoAndResidentialData({
+          checkSddEligibility: false
+        })
+      )
+    } catch (e) {
+      yield put(
+        actions.form.stopSubmit(KYC_EXTRA_QUESTIONS_FORM, {
+          _error: typeof e === 'string' ? e : e.description
+        })
+      )
+      yield put(
+        actions.logs.logErrorMessage(
+          logLocation,
+          'saveInfoAndResidentialData',
+          `Error saving info and residential data: ${e}`
+        )
+      )
+    }
+  }
+
   return {
     checkKycFlow,
     claimCampaignClicked,
     createRegisterUserCampaign,
     createUser,
     defineSteps,
+    fetchExtraKYC,
     fetchStates,
     fetchSupportedCountries,
     fetchSupportedDocuments,
@@ -482,8 +549,9 @@ export default ({ api, coreSagas, networks }) => {
     registerUserCampaign,
     resendSmsCode,
     saveInfoAndResidentialData,
+    saveKYCExtraQuestions,
     selectTier,
-    sendDeeplink,
+    sendDeepLink,
     sendEmailVerification,
     updateEmail,
     updateSmsNumber,

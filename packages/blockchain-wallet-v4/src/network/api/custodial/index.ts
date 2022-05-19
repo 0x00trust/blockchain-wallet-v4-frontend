@@ -1,13 +1,19 @@
-/* eslint-disable import/no-extraneous-dependencies */
-import { CoinType, SBPaymentTypes, WalletFiatType } from '@core/types'
+import {
+  BSPaymentTypes,
+  CoinType,
+  CrossBorderLimits,
+  FiatType,
+  WalletAccountType,
+  WalletFiatType
+} from '@core/types'
 import {
   BankTransferAccountType,
   NabuProductType,
-  ProductEligibility,
-  ProductEligibilityResponse
+  ProductEligibilityResponse,
+  WithdrawLimitsResponse
 } from 'data/types'
 
-import { SBTransactionsType } from '../simpleBuy/types'
+import { BSTransactionsType } from '../buySell/types'
 import {
   BeneficiariesType,
   BeneficiaryType,
@@ -29,9 +35,12 @@ export default ({ authorizedGet, authorizedPost, nabuUrl }) => {
       url: nabuUrl
     })
 
-  const getWithdrawalLocks = (): WithdrawalLockResponseType =>
+  const getWithdrawalLocks = (currency: FiatType): WithdrawalLockResponseType =>
     authorizedGet({
-      endPoint: '/payments/withdrawals/locks',
+      data: {
+        currency
+      },
+      endPoint: `/payments/withdrawals/locks`,
       url: nabuUrl
     })
 
@@ -76,7 +85,7 @@ export default ({ authorizedGet, authorizedPost, nabuUrl }) => {
 
   const getWithdrawalFees = (
     product: WithdrawalFeesProductType,
-    paymentMethod?: SBPaymentTypes | 'DEFAULT' | 'ALL'
+    paymentMethod?: BSPaymentTypes | 'DEFAULT' | 'ALL'
   ): WithdrawalMinsAndFeesResponse =>
     authorizedGet({
       data: {
@@ -88,15 +97,14 @@ export default ({ authorizedGet, authorizedPost, nabuUrl }) => {
     })
 
   const checkWithdrawalLocks = (
-    paymentMethod: SBPaymentTypes,
+    paymentMethod: BSPaymentTypes,
     currency: WalletFiatType
   ): WithdrawalLockCheckResponseType =>
     authorizedPost({
       contentType: 'application/json',
       data: {
         currency,
-        paymentMethod,
-        product: 'SIMPLEBUY'
+        paymentMethod
       },
       endPoint: '/payments/withdrawals/locks/check',
       url: nabuUrl
@@ -110,12 +118,6 @@ export default ({ authorizedGet, authorizedPost, nabuUrl }) => {
       url: nabuUrl
     })
 
-  const getProductsEligibility = (): ProductEligibility[] =>
-    authorizedGet({
-      endPoint: '/eligible/products',
-      url: nabuUrl
-    })
-
   const getEligibilityForProduct = (product: NabuProductType): ProductEligibilityResponse =>
     authorizedGet({
       endPoint: `/eligible/product/${product}`,
@@ -126,7 +128,7 @@ export default ({ authorizedGet, authorizedPost, nabuUrl }) => {
     currency,
     fromValue,
     toValue
-  }: GetTransactionsHistoryType): SBTransactionsType =>
+  }: GetTransactionsHistoryType): BSTransactionsType =>
     authorizedGet({
       data: {
         currency,
@@ -139,13 +141,56 @@ export default ({ authorizedGet, authorizedPost, nabuUrl }) => {
       url: nabuUrl
     })
 
+  const getWithdrawalLimits = (currency?: FiatType): WithdrawLimitsResponse =>
+    authorizedGet({
+      data: {
+        currency
+      },
+      endPoint: `/v2/limits/withdrawals`,
+      url: nabuUrl
+    })
+
+  const getCrossBorderTransactions = (
+    inputCurrency: CoinType,
+    fromAccount: WalletAccountType,
+    outputCurrency: CoinType,
+    toAccount: WalletAccountType,
+    currency?: WalletFiatType
+  ): CrossBorderLimits =>
+    authorizedGet({
+      data: {
+        currency,
+        fromAccount,
+        inputCurrency,
+        outputCurrency,
+        toAccount
+      },
+      endPoint: `/limits/crossborder/transaction`,
+      url: nabuUrl
+    })
+
+  const getLimitsAndFeaturesDetails = () =>
+    authorizedGet({
+      endPoint: `/limits/overview`,
+      url: nabuUrl
+    })
+
+  const fetchProductEligibilityForUser = () =>
+    authorizedGet({
+      endPoint: `/products`,
+      url: nabuUrl
+    })
+
   return {
     checkWithdrawalLocks,
+    fetchProductEligibilityForUser,
     getBeneficiaries,
+    getCrossBorderTransactions,
     getEligibilityForProduct,
-    getProductsEligibility,
+    getLimitsAndFeaturesDetails,
     getTransactionsHistory,
     getWithdrawalFees,
+    getWithdrawalLimits,
     getWithdrawalLocks,
     initiateCustodialTransfer,
     notifyNonCustodialToCustodialTransfer,

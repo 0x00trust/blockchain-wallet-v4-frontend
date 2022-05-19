@@ -12,7 +12,8 @@ import {
   ModalHeader,
   Text
 } from 'blockchain-info-components'
-import { Form, TextBox } from 'components/Form'
+import Form from 'components/Form/Form'
+import TextBox from 'components/Form/TextBox'
 import { required } from 'services/forms'
 
 const Code = styled.div`
@@ -30,16 +31,8 @@ const Code = styled.div`
   }
 `
 
-const TwoStepYubico = props => {
-  const {
-    close,
-    closeAll,
-    handleSubmit,
-    invalid,
-    position,
-    submitting,
-    total
-  } = props
+const TwoStepYubico = (props) => {
+  const { close, closeAll, handleSubmit, invalid, position, submitting, total } = props
 
   return (
     <Modal size='large' position={position} total={total}>
@@ -47,7 +40,7 @@ const TwoStepYubico = props => {
         <ModalHeader onClose={closeAll}>
           <FormattedMessage
             id='modals.twostepyubico.title'
-            defaultMessage='Enable Two-Step Verification'
+            defaultMessage='Enable Two-Factor Authentication'
           />
         </ModalHeader>
         <ModalBody>
@@ -65,15 +58,8 @@ const TwoStepYubico = props => {
           <Link size='13px' weight={400} onClick={close} capitalize>
             <FormattedMessage id='buttons.go_back' defaultMessage='Go Back' />
           </Link>
-          <Button
-            type='submit'
-            nature='primary'
-            disabled={submitting || invalid}
-          >
-            <FormattedMessage
-              id='modals.twostepyubico.enable'
-              defaultMessage='Enable 2FA'
-            />
+          <Button type='submit' nature='primary' disabled={submitting || invalid}>
+            <FormattedMessage id='modals.twostepyubico.enable' defaultMessage='Enable 2FA' />
           </Button>
         </ModalFooter>
       </Form>

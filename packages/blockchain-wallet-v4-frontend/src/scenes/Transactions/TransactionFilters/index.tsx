@@ -17,11 +17,18 @@ class TransactionFiltersContainer extends React.PureComponent<Props> {
   }
 
   render() {
-    return <Menu handleClickReporting={this.handleClickReporting} />
+    // TODO: SELF_CUSTODY
+    return (
+      <Menu
+        canSearch={this.props.coin !== 'STX'}
+        canGenerateTxReport={this.props.coin !== 'STX'}
+        handleClickReporting={this.handleClickReporting}
+      />
+    )
   }
 }
 
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch) => ({
   modalActions: bindActionCreators(actions.modals, dispatch)
 })
 

@@ -2,8 +2,8 @@ import React from 'react'
 import { FormattedMessage } from 'react-intl'
 import styled from 'styled-components'
 
+import { OrderType } from '@core/types'
 import { Button, Text } from 'blockchain-info-components'
-import { CoinType } from '@core/types'
 import { media } from 'services/styles'
 
 import { Props } from '.'
@@ -33,8 +33,8 @@ const Actions = ({ buySellActions, coinName, cryptoCurrency, swapActions }: Prop
         nature='primary'
         onClick={() =>
           buySellActions.showModal({
-            cryptoCurrency: cryptoCurrency as CoinType,
-            orderType: 'BUY',
+            cryptoCurrency,
+            orderType: OrderType.BUY,
             origin: 'PriceChart'
           })
         }
@@ -51,7 +51,7 @@ const Actions = ({ buySellActions, coinName, cryptoCurrency, swapActions }: Prop
         data-e2e='swapButton'
         height='42px'
         nature='empty-secondary'
-        onClick={() => swapActions.showModal('PriceChart')}
+        onClick={() => swapActions.showModal({ origin: 'PriceChart' })}
       >
         <Text color='blue600' size='16px' lineHeight='24px' weight={600}>
           <FormattedMessage

@@ -1,7 +1,7 @@
 import { both, compose, filter, flip, gte, lte, prop, values } from 'ramda'
 
 import { model } from 'data'
-import { KycStateType, Tiers } from 'data/modules/types'
+import { KycStateType, Tiers } from 'data/types'
 
 import { STEP_TIERS, STEPS } from './model'
 
@@ -32,6 +32,10 @@ const computeSteps = ({
       return false
     }
     if ((kycState === 'PENDING' || kycState === 'VERIFIED') && step === STEPS.verify) {
+      return false
+    }
+
+    if (kycState === 'UNDER_REVIEW' && step !== STEPS.submitted) {
       return false
     }
 

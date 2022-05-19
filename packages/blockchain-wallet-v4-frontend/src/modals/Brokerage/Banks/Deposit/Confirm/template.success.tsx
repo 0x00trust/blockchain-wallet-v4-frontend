@@ -1,13 +1,18 @@
 import React, { useCallback, useState } from 'react'
 import { FormattedMessage } from 'react-intl'
-import { getLockRuleMessaging } from 'blockchain-wallet-v4-frontend/src/modals/SimpleBuy/model'
-import moment from 'moment'
+import { getLockRuleMessaging } from 'blockchain-wallet-v4-frontend/src/modals/BuySell/model'
+import { addDays, format, intervalToDuration } from 'date-fns'
 import styled from 'styled-components'
 
-import { Button, HeartbeatLoader, Text } from 'blockchain-info-components'
 import { fiatToString } from '@core/exchange/utils'
-import { FiatType, SBPaymentTypes } from '@core/types'
-import { FlyoutContainer, FlyoutContent, FlyoutFooter, FlyoutHeader } from 'components/Flyout'
+import { BSPaymentTypes, FiatType } from '@core/types'
+import { Button, HeartbeatLoader, Text } from 'blockchain-info-components'
+import {
+  FlyoutContainer,
+  FlyoutContent,
+  FlyoutFooter,
+  FlyoutHeader
+} from 'components/Flyout/Layout'
 import { BankDWStepType, BankPartners } from 'data/types'
 
 import { Props as _P, SuccessStateType as _S } from '.'
@@ -31,10 +36,6 @@ const Success = (props: Props) => {
     })
   }, [])
 
-  const cancelButtonClick = useCallback(() => {
-    props.handleClose()
-  }, [])
-
   const submitButtonClick = useCallback(() => {
     setSubmitting(true)
     props.brokerageActions.createFiatDeposit()
@@ -42,7 +43,9 @@ const Success = (props: Props) => {
 
   const amount = props.formValues?.amount || 0
   const showLock = (props.withdrawLockCheck && props.withdrawLockCheck.lockTime > 0) || false
-  const days = showLock ? moment.duration(props.withdrawLockCheck?.lockTime, 'seconds').days() : 0
+  const days = showLock
+    ? (intervalToDuration({ end: props.withdrawLockCheck?.lockTime || 0, start: 0 }).days as number)
+    : 0
 
   return (
     <FlyoutContainer>
@@ -84,7 +87,7 @@ const Success = (props: Props) => {
                 defaultMessage='Funds Will Arrive'
               />
             </Text>
-            <LineItemText>{moment().add(3, 'days').format('dddd, MMM Do, YYYY')}</LineItemText>
+            <LineItemText>{format(addDays(new Date(), 3), 'EEEE, MMM do, yyyy')}</LineItemText>
           </Row>
         )}
         <Row>
@@ -100,10 +103,10 @@ const Success = (props: Props) => {
           </LineItemText>
         </Row>
         <div style={{ padding: '20px 40px 0' }}>
-          {getLockRuleMessaging(showLock, days, SBPaymentTypes.BANK_TRANSFER)}
+          {getLockRuleMessaging(showLock, days, BSPaymentTypes.BANK_TRANSFER)}
         </div>
       </FlyoutContent>
-      <FlyoutFooter>
+      <FlyoutFooter collapsed>
         <Button
           data-e2e='submitDepositAmount'
           height='48px'
@@ -118,28 +121,9 @@ const Success = (props: Props) => {
           ) : (
             <FormattedMessage
               id='modals.simplebuy.deposit.deposit_button'
-              defaultMessage='Deposit {amount}'
-              values={{
-                amount: fiatToString({
-                  digits: 0,
-                  unit: props.defaultMethod?.currency || ('USD' as FiatType),
-                  value: amount
-                })
-              }}
+              defaultMessage='Deposit Now'
             />
           )}
-        </Button>
-        <Button
-          data-e2e='depositCancel'
-          disabled={submitting}
-          size='16px'
-          height='48px'
-          nature='light-red'
-          onClick={cancelButtonClick}
-          fullwidth
-          style={{ marginTop: '16px' }}
-        >
-          <FormattedMessage id='buttons.cancel' defaultMessage='Cancel' />
         </Button>
       </FlyoutFooter>
     </FlyoutContainer>

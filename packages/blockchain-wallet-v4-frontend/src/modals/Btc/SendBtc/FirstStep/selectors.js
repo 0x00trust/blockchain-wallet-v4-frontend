@@ -1,7 +1,7 @@
 import React from 'react'
 import { FormattedMessage } from 'react-intl'
 import * as Bitcoin from 'bitcoinjs-lib'
-import { isEmpty, length, path, pathOr, prop } from 'ramda'
+import { length, path, pathOr, prop } from 'ramda'
 
 import { createDeepEqualSelector } from '@core/utils'
 import { model, selectors } from 'data'
@@ -12,29 +12,28 @@ export const getData = createDeepEqualSelector(
     selectors.components.sendBtc.getPayment,
     selectors.core.common.btc.getActiveHDAccounts,
     selectors.core.common.btc.getActiveAddresses,
-    selectors.core.kvStore.lockbox.getDevices,
     selectors.core.wallet.isMnemonicVerified,
-    selectors.form.getFormValues(model.components.sendBtc.FORM)
+    selectors.form.getFormValues(model.components.sendBtc.FORM),
+    selectors.components.sendBtc.getSendLimits
   ],
   (
     feePerByteToggled,
     paymentR,
     btcAccountsR,
     btcAddressesR,
-    lockboxDevicesR,
     isMnemonicVerified,
-    formValues
+    formValues,
+    sendLimitsR
   ) => {
     const btcAccountsLength = length(btcAccountsR.getOrElse([]))
     const btcAddressesLength = length(btcAddressesR.getOrElse([]))
     const networkType = 'bitcoin'
-    const excludeLockbox = false
-    const enableToggle =
-      btcAccountsLength + btcAddressesLength > 1 || !isEmpty(lockboxDevicesR.getOrElse([]))
+    const enableToggle = btcAccountsLength + btcAddressesLength > 1
     const amount = prop('amount', formValues)
     const feePerByte = prop('feePerByte', formValues)
     const destination = prop('to', formValues)
     const from = prop('from', formValues)
+    const sendLimits = sendLimitsR.getOrElse({})
 
     const transform = (payment) => {
       const regularFeePerByte = path(['fees', 'regular'], payment)
@@ -75,7 +74,6 @@ export const getData = createDeepEqualSelector(
         destination,
         effectiveBalance,
         enableToggle,
-        excludeLockbox,
         feePerByte,
         feePerByteElements,
         feePerByteToggled,
@@ -86,6 +84,7 @@ export const getData = createDeepEqualSelector(
         network,
         priorityFeePerByte,
         regularFeePerByte,
+        sendLimits,
         totalFee
       }
     }

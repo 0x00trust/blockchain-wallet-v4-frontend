@@ -1,21 +1,23 @@
 import React, { PureComponent } from 'react'
 import styled from 'styled-components'
 
+import { IngestedSelfCustodyType } from '@core/network/api/coin/types'
 import {
+  BSOrderType,
+  BSTransactionType,
   CoinType,
-  FiatSBAndSwapTransactionType,
+  FiatBSAndSwapTransactionType,
   FiatType,
   ProcessedTxType,
   RemoteDataType,
-  SBOrderType,
-  SBTransactionType,
   WalletCurrencyType
 } from '@core/types'
 import DataError from 'components/DataError'
 
+import BuySellListItem from '../BSOrderTx'
 import CustodialTxListItem from '../CustodialTx'
 import NonCustodialTxListItem from '../NonCustodialTx'
-import SimpleBuyListItem from '../SBOrderTx'
+import SelfCustodyTx from '../SelfCustodyTx'
 import SwapOrderTx from '../SwapOrderTx'
 import Loading from './template.loading'
 
@@ -33,7 +35,6 @@ const TransactionsWrapper = styled.div`
 class TransactionList extends PureComponent<Props> {
   render() {
     const { coin, coinTicker, currency, data } = this.props
-
     return data.cata({
       Failure: (message) => <DataError onClick={this.props.onRefresh} message={message} />,
       Loading: () => <Loading />,
@@ -42,7 +43,7 @@ class TransactionList extends PureComponent<Props> {
         <TransactionsWrapper>
           {transactions.map((tx) => {
             // @ts-ignore
-            return 'hash' in tx ? (
+            return 'processingErrorType' in tx ? null : 'hash' in tx ? (
               <NonCustodialTxListItem
                 key={tx.hash}
                 transaction={tx}
@@ -54,11 +55,13 @@ class TransactionList extends PureComponent<Props> {
               // @ts-ignore
               <SwapOrderTx key={tx.id} order={tx} coin={coin as CoinType} />
             ) : 'pair' in tx ? (
-              <SimpleBuyListItem key={tx.id} order={tx} />
+              <BuySellListItem key={tx.id} order={tx} />
+            ) : 'movements' in tx ? (
+              <SelfCustodyTx key={tx.txId} tx={tx} />
             ) : (
               <CustodialTxListItem
                 key={tx.id}
-                tx={tx as FiatSBAndSwapTransactionType}
+                tx={tx as FiatBSAndSwapTransactionType}
                 {...this.props}
               />
             )
@@ -73,13 +76,15 @@ export type Props = {
   coin: WalletCurrencyType
   coinTicker: string
   currency: FiatType
-  data: RemoteDataType<{ message: string }, Array<SBOrderType | ProcessedTxType>>
+  data: RemoteDataType<{ message: string }, Array<BSOrderType | ProcessedTxType>>
   onArchive: (address: string) => void
   onLoadMore: () => void
   onRefresh: () => void
   sourceType?: string
 }
 
-export type SuccessStateType = Array<SBOrderType | SBTransactionType | ProcessedTxType>
+export type SuccessStateType = Array<
+  BSOrderType | BSTransactionType | ProcessedTxType | IngestedSelfCustodyType
+>
 
 export default TransactionList

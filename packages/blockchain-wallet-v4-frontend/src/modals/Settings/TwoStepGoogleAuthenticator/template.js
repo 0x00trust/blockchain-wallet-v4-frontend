@@ -12,7 +12,8 @@ import {
   ModalHeader,
   Text
 } from 'blockchain-info-components'
-import { Form, TextBox } from 'components/Form'
+import Form from 'components/Form/Form'
+import TextBox from 'components/Form/TextBox'
 import QRCodeWrapper from 'components/QRCode/Wrapper'
 import { required } from 'services/forms'
 
@@ -35,16 +36,8 @@ const Code = styled.div`
   }
 `
 
-const TwoStepGoogleAuthenticator = props => {
-  const {
-    close,
-    closeAll,
-    invalid,
-    position,
-    submitting,
-    total,
-    ...rest
-  } = props
+const TwoStepGoogleAuthenticator = (props) => {
+  const { close, closeAll, invalid, position, submitting, total, ...rest } = props
   const { googleAuthenticatorSecretUrl, handleSubmit } = rest
 
   return (
@@ -53,7 +46,7 @@ const TwoStepGoogleAuthenticator = props => {
         <ModalHeader onClose={closeAll}>
           <FormattedMessage
             id='modals.twostepgoogleauthenticator.title'
-            defaultMessage='Enable Two-Step Verification'
+            defaultMessage='Enable Two-Factor Authentication'
           />
         </ModalHeader>
         <ModalBody>
@@ -79,23 +72,14 @@ const TwoStepGoogleAuthenticator = props => {
                 defaultMessage='Enter that number to finish the setup process:'
               />
             </Text>
-            <Field
-              name='code'
-              component={TextBox}
-              placeholder='XXXXXX'
-              validate={[required]}
-            />
+            <Field name='code' component={TextBox} placeholder='XXXXXX' validate={[required]} />
           </Code>
         </ModalBody>
         <ModalFooter align='spaced'>
           <Link size='13px' weight={400} onClick={close} capitalize>
             <FormattedMessage id='buttons.go_back' defaultMessage='Go Back' />
           </Link>
-          <Button
-            type='submit'
-            nature='primary'
-            disabled={submitting || invalid}
-          >
+          <Button type='submit' nature='primary' disabled={submitting || invalid}>
             <FormattedMessage
               id='modals.twostepgoogleauthenticator.enable'
               defaultMessage='Enable 2FA'
@@ -107,6 +91,4 @@ const TwoStepGoogleAuthenticator = props => {
   )
 }
 
-export default reduxForm({ form: 'twoStepGoogleAuthenticator' })(
-  TwoStepGoogleAuthenticator
-)
+export default reduxForm({ form: 'twoStepGoogleAuthenticator' })(TwoStepGoogleAuthenticator)

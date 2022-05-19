@@ -1,16 +1,15 @@
 // @ts-ignore
 import { concat, curry, filter, has, map, reduce, sequence } from 'ramda'
 
+import { Exchange, Remote } from '@core'
 import { ADDRESS_TYPES } from '@core/redux/payment/btc/utils'
 import { InterestAccountBalanceType } from '@core/types'
-import { Exchange, Remote } from '@core'
 import { selectors } from 'data'
 
 export const getEthData = (
   state,
   ownProps: {
     exclude?: Array<string>
-    excludeLockbox?: boolean
     forceCustodialFirst?: boolean
     includeCustodial?: boolean
     includeExchangeAddress?: boolean
@@ -19,7 +18,6 @@ export const getEthData = (
 ) => {
   const {
     exclude = [],
-    excludeLockbox,
     includeExchangeAddress,
     includeCustodial,
     includeInterest,
@@ -51,7 +49,7 @@ export const getEthData = (
   }
   const buildInterestDisplay = (account: InterestAccountBalanceType['ETH']) => {
     return (
-      `Interest Account` +
+      `Rewards Account` +
       ` (${Exchange.displayCoinToCoin({
         coin: 'ETH',
         value: account ? account.balance : 0
@@ -81,7 +79,7 @@ export const getEthData = (
             label: buildInterestDisplay(account),
             value: {
               ...account,
-              label: 'Interest Account',
+              label: 'Rewards Account',
               type: ADDRESS_TYPES.INTEREST
             }
           }
@@ -108,8 +106,8 @@ export const getEthData = (
         .map(toDropdown)
         .map(toGroup('Wallet')),
       showCustodial || showCustodialWithAddress
-        ? selectors.components.simpleBuy
-            .getSBBalances(state)
+        ? selectors.components.buySell
+            .getBSBalances(state)
             .map((x) => ({
               ...x.ETH,
               address: accountAddress ? accountAddress.data : null
@@ -122,17 +120,10 @@ export const getEthData = (
             .getInterestAccountBalance(state)
             .map((x) => x.ETH)
             .map(toInterestDropdown)
-            .map(toGroup('Interest Account'))
-        : Remote.of([]),
-      excludeLockbox
-        ? Remote.of([])
-        : selectors.core.common.eth
-            .getLockboxEthBalances(state)
-            .map(excluded)
-            .map(toDropdown)
-            .map(toGroup('Lockbox'))
-    ]).map(([b1, b2, b3, b4, b5]) => {
-      const orderArray = forceCustodialFirst ? [b3, b1, b2, b4, b5] : [b1, b2, b3, b4, b5]
+            .map(toGroup('Rewards Account'))
+        : Remote.of([])
+    ]).map(([b1, b2, b3, b4]) => {
+      const orderArray = forceCustodialFirst ? [b3, b1, b2, b4] : [b1, b2, b3, b4]
       // @ts-ignore
       const data = reduce(concat, [], orderArray)
       return { data }
@@ -178,7 +169,7 @@ export const getErc20Data = (
 
   const buildInterestDisplay = (coin: string, account) => {
     return (
-      `Interest Account` +
+      `Rewards Account` +
       ` (${Exchange.displayCoinToCoin({
         coin,
         value: account ? account.balance : 0
@@ -223,7 +214,7 @@ export const getErc20Data = (
             label: buildInterestDisplay(coin, account),
             value: {
               ...account,
-              label: `Interest Account`,
+              label: `Rewards Account`,
               type: ADDRESS_TYPES.INTEREST
             }
           }
@@ -250,8 +241,8 @@ export const getErc20Data = (
         .map(toGroup('Wallet')),
       Remote.of([]),
       showCustodial || showCustodialWithAddress
-        ? selectors.components.simpleBuy
-            .getSBBalances(state)
+        ? selectors.components.buySell
+            .getBSBalances(state)
             .map((x) => ({
               ...x[coin],
               address: accountAddress ? accountAddress.data : null
@@ -264,7 +255,7 @@ export const getErc20Data = (
             .getInterestAccountBalance(state)
             .map((x) => x[coin])
             .map(toInterestDropdown)
-            .map(toGroup('Interest Account'))
+            .map(toGroup('Rewards Account'))
         : Remote.of([])
     ]).map(([b1, b2, b3, b4, b5]) => {
       const orderArray = forceCustodialFirst ? [b2, b1, b3, b4, b5] : [b1, b2, b3, b4, b5]

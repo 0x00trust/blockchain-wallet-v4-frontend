@@ -10,7 +10,7 @@ export const getData = (state) => {
   const from = formValueSelector(model.components.sendBch.FORM)(state, 'from')
 
   const paymentR = selectors.components.sendBch.getPayment(state)
-  const excludeLockbox = false
+  const sendLimits = selectors.components.sendBch.getSendLimits(state).getOrElse({})
   const networkType = 'bitcoin'
   const isMnemonicVerified = selectors.core.wallet.isMnemonicVerified(state)
   const network = Bitcoin.networks[networkType]
@@ -25,12 +25,12 @@ export const getData = (state) => {
       amount,
       destination,
       effectiveBalance,
-      excludeLockbox,
       from,
       isMnemonicVerified,
       maxFeePerByte,
       minFeePerByte,
       network,
+      sendLimits,
       totalFee
     }
   }

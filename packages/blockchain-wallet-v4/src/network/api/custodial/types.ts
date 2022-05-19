@@ -1,9 +1,10 @@
 import {
   AgentType,
+  BSPaymentTypes,
+  BSTransactionStateType,
   CoinType,
   FiatType,
-  SBPaymentTypes,
-  SBTransactionStateType,
+  WalletAccountType,
   WalletCurrencyType,
   WalletFiatType
 } from '@core/types'
@@ -53,30 +54,28 @@ export type PaymentDepositPendingResponseType = {
   insertedAt: string
   owner: string
   product: NabuCustodialProductType
-  state: SBTransactionStateType
+  state: BSTransactionStateType
   txHash: string
   updatedAt: string
 }
 
+export type WithdrawLockAmount = {
+  amount: string
+  currency: FiatType
+}
 export type WithdrawalLock = {
-  attributes: {}
+  amount: WithdrawLockAmount
   expiresAt: string
-  id: string
-  insertedAt: string
-  lockRuleId: string
-  paymentId: string
-  updatedAt: string
-  usdAmount: NabuMoneyFloatType
-  userId: string
 }
 
 export type WithdrawalLockResponseType = {
   locks: Array<WithdrawalLock>
+  totalLocked: WithdrawLockAmount
 }
 
 export type WithdrawResponseType = {
-  amount: { symbol: WalletFiatType; value: string }
-  fee?: { symbol: WalletFiatType; value: string }
+  amount: { symbol: string; value: string }
+  fee?: { symbol: string; value: string }
   id: string
   product: NabuCustodialProductType
   state: 'NONE'
@@ -143,11 +142,53 @@ export type PaymentMethod = {
   ineligibleReason: IneligibilityReasons
   limits: { max: string; min: string }
   subTypes: string[]
-  type: SBPaymentTypes.PAYMENT_CARD | SBPaymentTypes.BANK_ACCOUNT
+  type: BSPaymentTypes.PAYMENT_CARD | BSPaymentTypes.BANK_ACCOUNT
 }
 
 export type GetTransactionsHistoryType = {
   currency: WalletCurrencyType
   fromValue?: string
   toValue?: string
+}
+
+export type CrossBorderLimitsPayload = {
+  currency?: WalletFiatType
+  fromAccount: WalletAccountType
+  inputCurrency: CoinType
+  outputCurrency: CoinType
+  toAccount: WalletAccountType
+}
+
+type CrossBorderLimitItem = {
+  currency: FiatType
+  value: string
+}
+
+export type LimitWithEffective = {
+  effective: boolean
+  limit: CrossBorderLimitItem
+}
+
+export type CrossBorderLimitSuggestedItem = {
+  available: CrossBorderLimitItem
+  limit: CrossBorderLimitItem
+  used: CrossBorderLimitItem
+}
+
+export type CrossBorderLimits = {
+  currency: FiatType
+  current: {
+    available: CrossBorderLimitItem
+    daily?: LimitWithEffective
+    monthly?: LimitWithEffective
+    yearly?: LimitWithEffective
+  }
+  suggestedUpgrade: {
+    available: CrossBorderLimitItem
+    daily?: CrossBorderLimitSuggestedItem
+    monthly?: CrossBorderLimitSuggestedItem
+    requiredTier: number
+    requirements: string[]
+    yearly?: CrossBorderLimitSuggestedItem
+  }
 }

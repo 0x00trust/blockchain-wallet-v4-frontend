@@ -1,16 +1,16 @@
-import moment from 'moment'
+import { intervalToDuration } from 'date-fns'
 import { FormAction } from 'redux-form'
 import { call, CallEffect, delay, put, select } from 'redux-saga/effects'
 
 import { APIType } from '@core/network/api'
 import {
   BeneficiaryType,
+  BSOrderType,
+  BSPaymentTypes,
   CoinType,
   PaymentType,
   PaymentValue,
   RemoteDataType,
-  SBOrderType,
-  SBPaymentTypes,
   WalletFiatType
 } from '@core/types'
 import { errorHandler } from '@core/utils'
@@ -31,7 +31,8 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
   const buildAndPublishPayment = function* (
     coin: string,
     payment: PaymentType,
-    destination: string
+    destination: string,
+    hotwalletAddress?: string
   ): Generator<PaymentType | CallEffect, PaymentValue, any> {
     // eslint-disable-next-line no-useless-catch
     try {
@@ -45,6 +46,10 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
         payment = yield payment.memoType('text')
         // @ts-ignore
         payment = yield payment.setDestinationAccountExists(true)
+      } else if (hotwalletAddress && payment.coin === 'ETH') {
+        // @ts-ignore
+        payment = yield payment.depositAddress(destination)
+        payment = yield payment.to(hotwalletAddress)
       } else {
         payment = yield payment.to(destination, 'CUSTODIAL')
       }
@@ -64,7 +69,7 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
     const { currency } = action.payload
     try {
       yield put(A.fetchPaymentsTradingAccountLoading(currency))
-      const tradingAccount: BeneficiaryType = yield call(api.getSBPaymentAccount, currency)
+      const tradingAccount: BeneficiaryType = yield call(api.getBSPaymentAccount, currency)
       yield put(A.fetchPaymentsTradingAccountSuccess(currency, tradingAccount))
     } catch (e) {
       yield put(actions.logs.logErrorMessage(logLocation, 'fetchPaymentsTradingAccount', e))
@@ -149,10 +154,10 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
   const getWithdrawalLockCheck = function* () {
     try {
       yield put(A.getLockRuleLoading())
-      const payment: SBOrderType = yield select(selectors.components.simpleBuy.getSBOrder)
+      const payment: BSOrderType = yield select(selectors.components.buySell.getBSOrder)
 
       const fiatCurrency: WalletFiatType = yield select(
-        selectors.components.simpleBuy.getFiatCurrency
+        selectors.components.buySell.getFiatCurrency
       )
       const state = yield select()
       const settingsCurrency: WalletFiatType = selectors.core.settings
@@ -163,12 +168,12 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
 
       // Lock rule can only be called with BANK_TRANSFER and PAYMENT_CARD
       // Adding check here to only pass those too, else pass BANK_TRANSFER
-      const withdrawalCheckPayment: SBPaymentTypes =
+      const withdrawalCheckPayment: BSPaymentTypes =
         payment &&
-        (payment.paymentType === SBPaymentTypes.BANK_TRANSFER ||
-          payment.paymentType === SBPaymentTypes.PAYMENT_CARD)
+        (payment.paymentType === BSPaymentTypes.BANK_TRANSFER ||
+          payment.paymentType === BSPaymentTypes.PAYMENT_CARD)
           ? payment.paymentType
-          : SBPaymentTypes.BANK_TRANSFER
+          : BSPaymentTypes.BANK_TRANSFER
 
       const withdrawalLockCheckResponse = yield call(
         api.checkWithdrawalLocks,
@@ -190,7 +195,7 @@ export default ({ api, coreSagas, networks }: { api: APIType; coreSagas: any; ne
           WITHDRAW_LOCK_DEFAULT_DAYS
         ) || WITHDRAW_LOCK_DEFAULT_DAYS
       const days =
-        typeof rule === 'object' ? moment.duration(rule.lockTime, 'seconds').days() : rule
+        typeof rule === 'object' ? intervalToDuration({ end: rule.lockTime, start: 0 }).days : rule
       yield put(
         actions.alerts.displayError(C.LOCKED_WITHDRAW_ERROR, {
           days

@@ -2,7 +2,8 @@ import React from 'react'
 import styled from 'styled-components'
 
 import { Text } from 'blockchain-info-components'
-import { CreatableInputField, SelectBox } from 'components/Form'
+import CreatableInputField from 'components/Form/CreatableInputField'
+import SelectBox from 'components/Form/SelectBox'
 
 const ItemWrapper = styled.div`
   display: flex;
@@ -24,7 +25,7 @@ const ItemWrapper = styled.div`
   }
 `
 
-const renderItem = item => {
+const renderItem = (item) => {
   return (
     <ItemWrapper data-e2e='btcAddressOption'>
       <Text weight={400} size='14px'>
@@ -34,7 +35,7 @@ const renderItem = item => {
   )
 }
 
-export default props => {
+export default (props) => {
   const { input, meta, ...rest } = props
   return rest.isCreatable ? (
     <CreatableInputField {...props} templateItem={renderItem} grouped />

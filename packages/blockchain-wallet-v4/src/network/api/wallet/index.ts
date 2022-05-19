@@ -16,8 +16,8 @@ export default ({ get, post, rootUrl }) => {
       url: rootUrl
     })
 
-  const fetchPayloadWithTwoFactorAuth = (guid, sessionToken, twoFactorCode) => {
-    return post({
+  const fetchPayloadWithTwoFactorAuth = (guid, sessionToken, twoFactorCode) =>
+    post({
       data: {
         format: 'plain',
         guid,
@@ -29,7 +29,6 @@ export default ({ get, post, rootUrl }) => {
       sessionToken,
       url: rootUrl
     })
-  }
 
   const savePayload = (data) =>
     post({
@@ -38,9 +37,18 @@ export default ({ get, post, rootUrl }) => {
       url: rootUrl
     }).then(() => data.checksum)
 
-  const createPayload = (email, data) =>
+  const createPayload = (email, captchaToken, data) =>
     post({
-      data: mergeRight({ email, format: 'plain', method: 'insert' }, data),
+      data: mergeRight(
+        {
+          captcha: captchaToken,
+          email,
+          format: 'plain',
+          method: 'insert',
+          siteKey: window.CAPTCHA_KEY
+        },
+        data
+      ),
       endPoint: '/wallet',
       url: rootUrl
     }).then(() => data.checksum)
@@ -104,6 +112,32 @@ export default ({ get, post, rootUrl }) => {
       url: rootUrl
     })
 
+  const getMagicLinkData = (sessionToken) =>
+    get({
+      contentType: 'application/json',
+      endPoint: '/wallet/poll-for-wallet-info',
+      sessionToken,
+      url: rootUrl
+    })
+
+  const authorizeVerifyDevice = (
+    fromSessionId,
+    magicLinkDataEncoded,
+    confirm_device,
+    exchange_only_login
+  ) =>
+    post({
+      data: {
+        confirm_device,
+        exchange_only_login,
+        fromSessionId,
+        method: 'authorize-verify-device',
+        payload: magicLinkDataEncoded
+      },
+      endPoint: '/wallet',
+      url: rootUrl
+    })
+
   const generateUUIDs = (count) =>
     get({
       data: { format: 'json', n: count },
@@ -138,34 +172,6 @@ export default ({ get, post, rootUrl }) => {
       sessionToken,
       url: rootUrl
     })
-
-  const remindGuid = (email, captchaToken, sessionToken) => {
-    post({
-      data: {
-        captcha: captchaToken,
-        email,
-        method: 'send-guid-reminder',
-        siteKey: window.CAPTCHA_KEY
-      },
-      endPoint: '/wallet',
-      sessionToken,
-      url: rootUrl
-    })
-  }
-
-  const triggerWalletMagicLinkLegacy = (email, captchaToken, sessionToken) => {
-    post({
-      data: {
-        captcha: captchaToken,
-        email,
-        method: 'send-guid-reminder',
-        siteKey: window.CAPTCHA_KEY
-      },
-      endPoint: '/wallet',
-      sessionToken,
-      url: rootUrl
-    })
-  }
 
   // marks timestamp when user last backed up phrase
   const updateMnemonicBackup = (sharedKey, guid) =>
@@ -266,6 +272,7 @@ export default ({ get, post, rootUrl }) => {
 
   return {
     authorizeLogin,
+    authorizeVerifyDevice,
     createPayload,
     createPinEntry,
     deauthorizeBrowser,
@@ -274,19 +281,18 @@ export default ({ get, post, rootUrl }) => {
     fetchPayloadWithSharedKey,
     fetchPayloadWithTwoFactorAuth,
     generateUUIDs,
+    getMagicLinkData,
     getPairingPassword,
     getPinValue,
     handle2faReset,
     obtainSessionToken,
     pollForSessionGUID,
-    remindGuid,
     resendSmsLoginCode,
     reset2fa,
     savePayload,
     sendSecureChannel,
     triggerMnemonicViewedAlert,
     triggerNonCustodialSendAlert,
-    triggerWalletMagicLinkLegacy,
     updateMnemonicBackup,
     verifyEmailToken
   }

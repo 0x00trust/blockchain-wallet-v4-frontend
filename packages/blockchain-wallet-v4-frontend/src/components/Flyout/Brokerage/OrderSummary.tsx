@@ -1,9 +1,9 @@
 import React from 'react'
 import { FormattedMessage } from 'react-intl'
-import moment from 'moment'
+import { intervalToDuration } from 'date-fns'
 import styled from 'styled-components'
 
-import { OrderType, SBOrderStateType, SBPaymentTypes } from '@core/types'
+import { BSOrderStateType, BSPaymentTypes, OrderType } from '@core/types'
 import { Button, Icon, Link, Text } from 'blockchain-info-components'
 
 import Container from '../Container'
@@ -33,7 +33,7 @@ const IconWrapper = styled.div`
   justify-content: center;
 `
 const TitleWrapper = styled(Text)`
-  margin: 32px 0 24px 0;
+  padding: 32px 0 24px 0;
   width: 100%;
 `
 const BottomInfo = styled(Bottom)`
@@ -69,17 +69,20 @@ const OrderSummary: React.FC<Props> = ({
   paymentType
 }) => {
   const isPendingDeposit = orderState === 'PENDING_DEPOSIT'
-  const isPendingAch = isPendingDeposit && paymentType === SBPaymentTypes.BANK_TRANSFER
+  const isPendingAch = isPendingDeposit && paymentType === BSPaymentTypes.BANK_TRANSFER
   const isTransactionPending = isPendingDeposit && paymentState === 'WAITING_FOR_3DS_RESPONSE'
 
-  const days = moment.duration(lockTime, 'seconds').days()
+  const { days } = intervalToDuration({ end: lockTime, start: 0 })
+
   return (
     <Container>
       <Header data-e2e='sbCloseModalIcon' mode='close' onClick={handleClose} />
       <Content mode='middle'>
         <div style={{ padding: '0 77px', textAlign: 'center' }}>
           <IconWrapper>
-            <Icon color={outputCurrency} name={outputCurrency} size='64px' />
+            <div style={{ height: 64, width: 64 }}>
+              <Icon name={outputCurrency} size='64px' />
+            </div>
 
             {orderState === 'FINISHED' ? (
               <IconBackground color='white'>
@@ -202,35 +205,46 @@ const OrderSummary: React.FC<Props> = ({
             </Bottom>
           )}
           {orderType === 'BUY' &&
-            (paymentType === SBPaymentTypes.PAYMENT_CARD ||
-              paymentType === SBPaymentTypes.USER_CARD) && (
+            (paymentType === BSPaymentTypes.PAYMENT_CARD ||
+              paymentType === BSPaymentTypes.USER_CARD) && (
               <BottomInfo>
-                <Text color='grey600' size='14px' weight={500}>
-                  <FormattedMessage
-                    id='modals.simplebuy.summary.complete_card_info_main'
-                    defaultMessage='Your final amount might change due to market activity. For security purposes, a {days} holding period will be applied to your funds. You can Sell or Swap during this time. We will notify you once the funds are available to be withdrawn.'
-                    values={{ days }}
-                  />
-                </Text>
-                <Text color='grey600' size='14px' weight={500} style={{ marginTop: '16px' }}>
-                  <span>
+                {days === 0 ? (
+                  <Text size='12px' weight={500} color='grey900'>
                     <FormattedMessage
-                      id='modals.simplebuy.summary.complete_card_info_additional'
-                      defaultMessage='In the meantime, you can sell into Cash, swap, and trade within Blockchain.com.'
-                    />{' '}
-                    <a
-                      href='https://support.blockchain.com/hc/en-us/articles/360048200392'
-                      rel='noopener noreferrer'
-                      target='_blank'
-                    >
-                      <FormattedMessage id='copy.learn_more' defaultMessage='Learn more' />
-                    </a>
-                  </span>
-                </Text>
+                      id='modals.simplebuy.confirm.activity'
+                      defaultMessage='Your final amount may change due to market activity.'
+                    />
+                  </Text>
+                ) : (
+                  <>
+                    <Text color='grey600' size='14px' weight={500}>
+                      <FormattedMessage
+                        id='modals.simplebuy.summary.complete_card_info_main'
+                        defaultMessage='Your final amount might change due to market activity. For security purposes, a {days} day holding period will be applied to your funds. You can Sell or Swap during this time. We will notify you once the funds are available to be withdrawn.'
+                        values={{ days }}
+                      />
+                    </Text>
+                    <Text color='grey600' size='14px' weight={500} style={{ marginTop: '16px' }}>
+                      <span>
+                        <FormattedMessage
+                          id='modals.simplebuy.summary.complete_card_info_additional'
+                          defaultMessage='In the meantime, you can sell into cash, swap, and trade within Blockchain.com.'
+                        />{' '}
+                        <a
+                          href='https://support.blockchain.com/hc/en-us/articles/360048200392'
+                          rel='noopener noreferrer'
+                          target='_blank'
+                        >
+                          <FormattedMessage id='copy.learn_more' defaultMessage='Learn more' />
+                        </a>
+                      </span>
+                    </Text>
+                  </>
+                )}
               </BottomInfo>
             )}
           {orderType === 'BUY' &&
-            paymentType === SBPaymentTypes.BANK_TRANSFER &&
+            paymentType === BSPaymentTypes.BANK_TRANSFER &&
             orderState !== 'FAILED' &&
             !isPendingAch && (
               <BottomInfo>
@@ -254,7 +268,7 @@ const OrderSummary: React.FC<Props> = ({
             )}
         </div>
       </Content>
-      <Footer>
+      <Footer collapsed>
         {children && <BottomPromo>{children}</BottomPromo>}
 
         {orderType === 'BUY' && orderState !== 'FAILED' && (
@@ -265,7 +279,6 @@ const OrderSummary: React.FC<Props> = ({
             height='48px'
             nature='primary'
             onClick={handleOkButton}
-            style={{ marginBottom: '16px' }}
           >
             <FormattedMessage id='buttons.ok' defaultMessage='OK' />
           </Button>
@@ -286,11 +299,19 @@ export type Props = {
   handleCompleteButton?: () => void
   handleOkButton: () => void
   lockTime: number
-  orderState: SBOrderStateType
+  orderState: BSOrderStateType
   orderType: OrderType
   outputCurrency: string
-  paymentState: 'WAITING_FOR_3DS_RESPONSE' | null
-  paymentType: SBPaymentTypes
+  paymentState:
+    | 'INITIAL'
+    | 'WAITING_FOR_3DS_RESPONSE'
+    | 'CONFIRMED_3DS'
+    | 'SETTLED'
+    | 'VOIDED'
+    | 'ABANDONED'
+    | 'FAILED'
+    | null
+  paymentType: BSPaymentTypes
 }
 
 export default OrderSummary

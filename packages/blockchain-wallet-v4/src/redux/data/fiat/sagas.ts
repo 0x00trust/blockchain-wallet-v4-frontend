@@ -1,4 +1,4 @@
-import moment from 'moment'
+import { getTime } from 'date-fns'
 import { filter, last, take as takeR } from 'ramda'
 import { call, put, select, take } from 'redux-saga/effects'
 
@@ -7,7 +7,7 @@ import { CoinType, FiatType } from '@core/types'
 import { errorHandler } from '@core/utils'
 
 import Remote from '../../../remote'
-import { FiatSBAndSwapTransactionType } from '../custodial/types'
+import { FiatBSAndSwapTransactionType } from '../custodial/types'
 import * as A from './actions'
 import * as AT from './actionTypes'
 import * as S from './selectors'
@@ -15,13 +15,6 @@ import * as S from './selectors'
 const PAGE_SIZE = 20
 
 export default ({ api }: { api: APIType }) => {
-  const watchTransactions = function* () {
-    while (true) {
-      const action = yield take(AT.FETCH_FIAT_TRANSACTIONS)
-      yield call(fetchTransactions, action)
-    }
-  }
-
   const fetchTransactions = function* (action: ReturnType<typeof A.fetchTransactions>) {
     try {
       const { payload } = action
@@ -43,16 +36,16 @@ export default ({ api }: { api: APIType }) => {
       // set next page as loading
       yield put(A.fetchTransactionsLoading(action.payload.currency, !!reset))
 
-      let sbTransactions: ReturnType<typeof api.getSBTransactions> = {
+      let sbTransactions: ReturnType<typeof api.getBSTransactions> = {
         items: [],
         next: null,
         prev: null
       }
-      let swapTransactions: Array<FiatSBAndSwapTransactionType> = []
+      let swapTransactions: Array<FiatBSAndSwapTransactionType> = []
 
       // if one of the following are true, we request more transactions
       // 1) no transactions exist
-      // 2) we have a next SB data stored (last tx id and timestamp)
+      // 2) we have a next BS data stored (last tx id and timestamp)
       // 3) we have a next swap page timestamp
       // 4) reset === true
       if (
@@ -62,7 +55,7 @@ export default ({ api }: { api: APIType }) => {
         reset
       ) {
         // fetch sb transactions
-        sbTransactions = yield call(api.getSBTransactions, {
+        sbTransactions = yield call(api.getBSTransactions, {
           currency: action.payload.currency,
           fromId: reset ? undefined : nextSbTxId,
           fromValue: reset ? undefined : nextSbTxTimestamp,
@@ -76,7 +69,7 @@ export default ({ api }: { api: APIType }) => {
           reset ? undefined : nextSwapPageTimestamp
         )
 
-        // create a view model that looks like a SB transaction for easier component rendering
+        // create a view model that looks like a BS transaction for easier component rendering
         swapTransactions = rawSwapTransactions.map(
           (swap) =>
             ({
@@ -94,7 +87,7 @@ export default ({ api }: { api: APIType }) => {
               insertedAt: swap.createdAt,
               state: swap.state,
               type: 'SELL'
-            } as FiatSBAndSwapTransactionType)
+            } as FiatBSAndSwapTransactionType)
         )
       }
 
@@ -107,9 +100,9 @@ export default ({ api }: { api: APIType }) => {
       const nextTransactionPage = takeR(
         PAGE_SIZE,
         [...sbTransactions.items, ...swapTransactions].sort((a, b) => {
-          return moment(b.insertedAt).valueOf() - moment(a.insertedAt).valueOf()
+          return getTime(new Date(b.insertedAt)) - getTime(new Date(a.insertedAt))
         })
-      ) as Array<FiatSBAndSwapTransactionType>
+      ) as Array<FiatBSAndSwapTransactionType>
 
       // if the now pruned transaction list are less than PAGE_SIZE, no more
       // transactions remain, else grab data needed from next page requests
@@ -139,6 +132,13 @@ export default ({ api }: { api: APIType }) => {
     } catch (e) {
       const error = errorHandler(e)
       yield put(A.fetchTransactionsFailure(action.payload.currency, error))
+    }
+  }
+
+  const watchTransactions = function* () {
+    while (true) {
+      const action = yield take(AT.FETCH_FIAT_TRANSACTIONS)
+      yield call(fetchTransactions, action)
     }
   }
 

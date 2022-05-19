@@ -1,26 +1,25 @@
 import React from 'react'
 import { FormattedMessage } from 'react-intl'
 import BigNumber from 'bignumber.js'
-import Bowser from 'bowser'
 import PropTypes from 'prop-types'
+import { isEmpty } from 'ramda'
 import { Field, reduxForm } from 'redux-form'
 import styled from 'styled-components'
 
-import { Banner, Button, Link, Text, TooltipHost, TooltipIcon } from 'blockchain-info-components'
 import { Remote } from '@core'
+import { Button, Link, Text, TooltipHost, TooltipIcon } from 'blockchain-info-components'
 import ComboDisplay from 'components/Display/ComboDisplay'
-import {
-  FiatConverter,
-  Form,
-  FormGroup,
-  FormItem,
-  FormLabel,
-  NumberBoxDebounced,
-  SelectBox,
-  SelectBoxCoin,
-  SelectBoxEthAddresses,
-  TextAreaDebounced
-} from 'components/Form'
+import UpgradeToGoldBanner from 'components/Flyout/Banners/UpgradeToGold'
+import FiatConverter from 'components/Form/FiatConverter'
+import Form from 'components/Form/Form'
+import FormGroup from 'components/Form/FormGroup'
+import FormItem from 'components/Form/FormItem'
+import FormLabel from 'components/Form/FormLabel'
+import NumberBoxDebounced from 'components/Form/NumberBoxDebounced'
+import SelectBox from 'components/Form/SelectBox'
+import SelectBoxCoin from 'components/Form/SelectBoxCoin'
+import SelectBoxEthAddresses from 'components/Form/SelectBoxEthAddresses'
+import TextAreaDebounced from 'components/Form/TextAreaDebounced'
 import QRCodeCapture from 'components/QRCode/Capture'
 import {
   ColLeft,
@@ -39,6 +38,7 @@ import UnstoppableDomains from 'components/UnstoppableDomains'
 import { model } from 'data'
 import { required, validEthAddress } from 'services/forms'
 
+import { TIER_TYPES } from '../../../Settings/TradingLimits/model'
 import LowBalanceWarning from './LowBalanceWarning'
 import LowEthWarningForErc20 from './LowEthWarningForErc20'
 import MinFeeForRetryInvalid from './MinFeeForRetryInvalid'
@@ -47,6 +47,7 @@ import RegularFeeLink from './RegularFeeLink'
 import {
   insufficientFunds,
   invalidAmount,
+  isSendLimitOver,
   maximumAmount,
   maximumFee,
   minimumFee,
@@ -54,10 +55,6 @@ import {
   shouldWarn
 } from './validation'
 
-const WarningBanners = styled(Banner)`
-  margin: -6px 0 12px;
-  padding: 8px;
-`
 const SubmitFormGroup = styled(FormGroup)`
   margin-top: 16px;
 `
@@ -72,7 +69,6 @@ const FirstStep = (props) => {
     amount,
     balanceStatus,
     coin,
-    excludeLockbox,
     fee,
     feeElements,
     feeToggled,
@@ -89,14 +85,12 @@ const FirstStep = (props) => {
     priorityFee,
     pristine,
     regularFee,
+    sendLimits,
     submitting,
-    unconfirmedTx
+    unconfirmedTx,
+    verifyIdentity
   } = props
-  const isFromLockbox = from && from.type === 'LOCKBOX'
   const isFromCustody = from && from.type === 'CUSTODIAL'
-  const browser = Bowser.getParser(window.navigator.userAgent)
-  const isBrowserSupported = browser.satisfies(model.components.lockbox.supportedBrowsers)
-  const disableLockboxSend = isFromLockbox && !isBrowserSupported
   const disableDueToLowEth = coin !== 'ETH' && !isSufficientEthForErc20 && !isFromCustody
   const disableRetryAttempt =
     isRetryAttempt && new BigNumber(fee).isLessThanOrEqualTo(minFeeRequiredForRetry)
@@ -121,32 +115,14 @@ const FirstStep = (props) => {
             disabled={isRetryAttempt}
             includeAll={false}
             validate={[required]}
-            excludeLockbox={excludeLockbox}
             includeCustodial
             coin={coin}
           />
         </FormItem>
       </FormGroup>
-      {isFromLockbox && !disableLockboxSend && (
-        <WarningBanners type='info'>
-          <Text color='warning' size='13px'>
-            <FormattedMessage
-              id='modals.sendeth.firststep.lockboxwarn'
-              defaultMessage='You will need to connect your Lockbox to complete this transaction.'
-            />
-          </Text>
-        </WarningBanners>
-      )}
-      {disableLockboxSend && (
-        <WarningBanners type='warning'>
-          <Text color='warning' size='12px'>
-            <FormattedMessage
-              id='modals.sendeth.firststep.browserwarn'
-              defaultMessage='Sending Ether from Lockbox can only be done while using the Brave, Chrome, Firefox or Opera browsers.'
-            />
-          </Text>
-        </WarningBanners>
-      )}
+      <FormGroup>
+        <CustodyToAccountMessage coin={coin} account={from} />
+      </FormGroup>
       <FormGroup margin='8px'>
         <FormItem>
           <FormLabel HtmlFor='to'>
@@ -185,9 +161,6 @@ const FirstStep = (props) => {
         </FormItem>
       </FormGroup>
       <UnstoppableDomains form={model.components.sendEth.FORM} />
-      <FormGroup>
-        <CustodyToAccountMessage coin={coin} account={from} amount={amount} />
-      </FormGroup>
       <FormGroup margin='15px'>
         <FormItem>
           <FormLabel HtmlFor='amount'>
@@ -198,8 +171,9 @@ const FirstStep = (props) => {
             disabled={unconfirmedTx}
             component={FiatConverter}
             coin={coin}
-            validate={[required, invalidAmount, insufficientFunds, maximumAmount]}
+            validate={[required, invalidAmount, insufficientFunds, maximumAmount, isSendLimitOver]}
             data-e2e={`${coin}Send`}
+            errorBottom
             marginTop='8px'
           />
         </FormItem>
@@ -313,6 +287,11 @@ const FirstStep = (props) => {
       {disableRetryAttempt && <MinFeeForRetryInvalid />}
       {disableDueToLowEth && <LowEthWarningForErc20 coin={coin} />}
       {isFromCustody && !isMnemonicVerified ? <MnemonicRequiredForCustodySend /> : null}
+      {isFromCustody &&
+      !isEmpty(sendLimits) &&
+      sendLimits?.suggestedUpgrade?.requiredTier === TIER_TYPES.GOLD ? (
+        <UpgradeToGoldBanner limits={sendLimits} verifyIdentity={verifyIdentity} />
+      ) : null}
       <SubmitFormGroup>
         <Button
           type='submit'

@@ -1,10 +1,11 @@
 import React from 'react'
 import { InjectedFormProps } from 'redux-form'
 
-import { Form } from 'components/Form'
+import Form from 'components/Form/Form'
 import { LoginSteps } from 'data/types'
 
 import { Props } from '..'
+import { RECOVER_FORM } from '../model'
 import FirstStep from './FirstStep'
 import SecondStep from './SecondStep'
 
@@ -20,31 +21,32 @@ class RecoveryPhraseContainer extends React.PureComponent<
   }
 
   componentWillUnmount() {
-    this.props.formActions.clearFields('recover', false, false, 'mnemonic')
-  }
-
-  setStep = (step: LoginSteps) => {
-    this.props.formActions.change('recover', 'step', step)
+    this.props.formActions.clearFields(RECOVER_FORM, false, false, 'mnemonic')
   }
 
   handleSubmit = (e) => {
     e.preventDefault()
-    const { authActions, email, language, mnemonic, recoverPassword } = this.props
+    const { formValues, language, signupActions } = this.props
+
     if (this.state.step === 1) {
-      this.setState({ step: 2 })
-    } else {
-      authActions.restore({
-        email,
-        language,
-        mnemonic,
-        network: undefined,
-        password: recoverPassword
-      })
+      return this.setState({ step: 2 })
     }
+
+    // we have a captcha token, continue recover process
+    signupActions.restore({
+      email: formValues.email,
+      language,
+      mnemonic: formValues.mnemonic,
+      password: formValues.recoverPassword
+    })
   }
 
   previousStep = () => {
     this.setState({ step: 1 })
+  }
+
+  setStep = (step: LoginSteps) => {
+    this.props.formActions.change(RECOVER_FORM, 'step', step)
   }
 
   render() {
