@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React from 'react'
 import { FormattedMessage } from 'react-intl'
 import { useDispatch } from 'react-redux'
 import { LinkContainer } from 'react-router-bootstrap'
@@ -11,19 +11,9 @@ import styled from 'styled-components'
 import { Button, Image, Link, Text } from 'blockchain-info-components'
 import { Flex } from 'components/Flex'
 import AppSwitcher from 'components/NavbarV2/AppSwitcher'
-import { DropdownMenu, DropdownMenuArrow, DropdownMenuItem } from 'components/NavbarV2/Dropdown'
-import {
-  DropdownNavLink,
-  Logo,
-  NavButton,
-  NavContainer,
-  NavLeft,
-  NavRight
-} from 'components/NavbarV2/Navbar'
+import { Logo, NavButton, NavContainer, NavLeft, NavRight } from 'components/NavbarV2/Navbar'
 import { actions } from 'data'
 import { Analytics, ModalName } from 'data/types'
-import { Destination } from 'layouts/Wallet/components'
-import { useOnClickOutside } from 'services/misc'
 import { media, useMedia } from 'services/styles'
 
 import { Props as OwnProps } from '../Nfts'
@@ -50,14 +40,18 @@ const NavCenter = styled.div`
     width: auto;
   `}
 `
-const NavLinkButton = styled(Link)`
+const NavLinkButton = styled(NavLink)`
   padding: 8px 10px;
   border-radius: 8px;
   text-decoration: none;
   margin-right: 12px;
-  background-color: ${(props) => props.theme.purple000};
-  * {
-    color: ${(props) => props.theme.purple600};
+  transition: color 0.3s, background-color 0.3s;
+  &:hover,
+  &.active {
+    background-color: ${(props) => props.theme.purple000};
+    * {
+      color: ${(props) => props.theme.purple600};
+    }
   }
 `
 
@@ -67,7 +61,6 @@ const ExploreHeader: React.FC<Props> = ({
   modalActions,
   pathname
 }) => {
-  const ref = useRef(null)
   const dispatch = useDispatch()
   const trackExploreClicked = () => {
     dispatch(
@@ -78,36 +71,6 @@ const ExploreHeader: React.FC<Props> = ({
     )
   }
   const isTablet = useMedia('tablet')
-  const [isMenuOpen, toggleIsMenuOpen] = React.useState<boolean>(false)
-
-  const handleMenuToggle = () => {
-    toggleIsMenuOpen((isMenuOpen) => !isMenuOpen)
-  }
-
-  useOnClickOutside(ref, () => toggleIsMenuOpen(false))
-
-  const navItems = [
-    {
-      copy: <FormattedMessage id='navbar.settings.general' defaultMessage='General' />,
-      'data-e2e': 'settings_generalLink',
-      to: '/settings/general'
-    },
-    {
-      copy: <FormattedMessage id='navbar.nfts.my_portfolio' defaultMessage='NFTs Portfolio' />,
-      'data-e2e': '',
-      to: `/nfts/address/${ethAddress}`
-    },
-    {
-      copy: <FormattedMessage id='navbar.nfts.my_portfolio' defaultMessage='NFTs Notifications' />,
-      'data-e2e': '',
-      to: `/nfts/address/settings/${ethAddress}`
-    },
-    {
-      clickHandler: () => window.location.reload(),
-      copy: <FormattedMessage id='layouts.wallet.header.Sign Out' defaultMessage='Sign Out' />,
-      'data-e2e': 'logoutLink'
-    }
-  ]
 
   return (
     <StickyNav>
@@ -121,15 +84,18 @@ const ExploreHeader: React.FC<Props> = ({
       </NavLeft>
       <NavCenter>
         {isTablet ? null : (
-          <LinkContainer onClick={trackExploreClicked} to='/nfts/explore'>
-            <NavLinkButton>
-              <Flex alignItems='center' gap={4}>
-                <Text size='14px' weight={600}>
-                  <FormattedMessage id='copy.explore' defaultMessage='Explore' />
-                </Text>
-              </Flex>
-            </NavLinkButton>
-          </LinkContainer>
+          <NavLinkButton to='/nfts/home' onClick={trackExploreClicked}>
+            <Text size='14px' weight={600}>
+              <FormattedMessage id='copy.home' defaultMessage='Home' />
+            </Text>
+          </NavLinkButton>
+        )}
+        {isTablet ? null : (
+          <NavLinkButton to='/nfts/explore' onClick={trackExploreClicked}>
+            <Text size='14px' weight={600}>
+              <FormattedMessage id='copy.explore' defaultMessage='Explore' />
+            </Text>
+          </NavLinkButton>
         )}
         <NftsSearch />
       </NavCenter>
@@ -151,34 +117,14 @@ const ExploreHeader: React.FC<Props> = ({
                 <FormattedMessage id='copy.wallet' defaultMessage='Wallet' />
               </span>
             </Button>
-            <NavButton onClick={handleMenuToggle} data-e2e='settingsLink'>
-              <Icon color='grey400' label='open-menu' size='sm'>
-                <IconUser />
-              </Icon>
-              {isMenuOpen && (
-                <DropdownMenu ref={ref}>
-                  <DropdownMenuArrow />
-                  {navItems.map(({ clickHandler = () => {}, copy, 'data-e2e': e2e, to }) => {
-                    if (!to) {
-                      return (
-                        <DropdownMenuItem key={e2e} onClick={clickHandler} data-e2e={e2e}>
-                          <Destination>{copy}</Destination>
-                        </DropdownMenuItem>
-                      )
-                    }
-                    return (
-                      <DropdownNavLink key={e2e} to={to}>
-                        <DropdownMenuItem
-                          data-e2e={e2e}
-                          onClick={() => (clickHandler ? clickHandler() : undefined)}
-                        >
-                          <Destination>{copy}</Destination>
-                        </DropdownMenuItem>
-                      </DropdownNavLink>
-                    )
-                  })}
-                </DropdownMenu>
-              )}
+            <NavButton data-e2e='settingsLink'>
+              <LinkContainer to={`/nfts/address/${ethAddress}`}>
+                <Link>
+                  <Icon color='grey400' label='open-menu' size='sm'>
+                    <IconUser />
+                  </Icon>
+                </Link>
+              </LinkContainer>
             </NavButton>
           </Flex>
         ) : (

@@ -7,21 +7,25 @@ import { CombinedError } from 'urql'
 import LazyLoadContainer from 'components/LazyLoadContainer'
 import { actions, selectors } from 'data'
 import { RootState } from 'data/rootReducer'
-import { CollectionSortFields, SortDirection, useCollectionsQuery } from 'generated/graphql.types'
+import {
+  CollectionSortFields,
+  SortDirection,
+  useTrendingCollectionsQuery
+} from 'generated/graphql.types'
 import { useMedia } from 'services/styles'
 
 import { GridWrapper } from '../components'
 import NftError from '../components/NftError'
 import NftGrid from '../components/NftGrid'
 import NftGridLoading from '../components/NftGridLoading'
-import NftPageLazyLoadWrapper from '../components/NftPageLazyLoadWrapper'
+import NftNoAssets from '../components/NftNoAssets'
 import TraitGridFilters from '../components/TraitGridFilters'
 import NftFilter, { NftFilterFormValuesType } from '../NftFilter'
 import NftFirehoseResults from './Firehose.results'
 
 const NftFirehose: React.FC<Props> = ({ formActions, formValues }) => {
   const isTablet = useMedia('tablet')
-  const [collectionsQuery] = useCollectionsQuery({
+  const [collectionsQuery] = useTrendingCollectionsQuery({
     variables: {
       sort: { by: CollectionSortFields.OneDayVolume, direction: SortDirection.Desc }
     }
@@ -32,6 +36,7 @@ const NftFirehose: React.FC<Props> = ({ formActions, formValues }) => {
   const [pageVariables, setPageVariables] = useState([{ page: 0 }])
   const [maxItemsFetched, setMaxItemsFetched] = useState(false)
   const [isFetchingNextPage, setIsFetchingNextPage] = useState(true)
+  const [numofPageItems, setNumOfPageItems] = useState<number | undefined>(undefined)
   const [errorFetchingNextPage, setNextPageFetchError] = useState<CombinedError | undefined>(
     undefined
   )
@@ -65,6 +70,7 @@ const NftFirehose: React.FC<Props> = ({ formActions, formValues }) => {
         minMaxPriceFilter
         forSaleFilter
         setIsFilterOpen={setIsFilterOpen}
+        verifiedFilter
       />
       <div style={{ width: '100%' }}>
         <TraitGridFilters
@@ -78,8 +84,11 @@ const NftFirehose: React.FC<Props> = ({ formActions, formValues }) => {
           setRefreshTrigger={setRefreshTrigger}
           setActiveTab={() => null}
         />
-        <NftPageLazyLoadWrapper>
+        {numofPageItems === 0 && pageVariables.length === 1 ? (
+          <NftNoAssets />
+        ) : (
           <LazyLoadContainer
+            useScroll
             triggerDistance={50}
             onLazyLoad={() =>
               isFetching || maxItemsFetched
@@ -97,6 +106,7 @@ const NftFirehose: React.FC<Props> = ({ formActions, formValues }) => {
                       key={page}
                       setMaxItemsFetched={setMaxItemsFetched}
                       setNextPageFetchError={setNextPageFetchError}
+                      setNumOfPageItems={setNumOfPageItems}
                       setIsFetchingNextPage={setIsFetchingNextPage}
                     />
                   ))
@@ -105,7 +115,7 @@ const NftFirehose: React.FC<Props> = ({ formActions, formValues }) => {
             </NftGrid>
             {errorFetchingNextPage ? <NftError error={errorFetchingNextPage} /> : null}
           </LazyLoadContainer>
-        </NftPageLazyLoadWrapper>
+        )}
       </div>
     </GridWrapper>
   )
